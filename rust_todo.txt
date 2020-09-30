@@ -1,0 +1,9 @@
+# Tutorials
+[X] Basic triangle rendering
+[X] Passing uniforms
+[ ] Transformations
+[ ] Camera struct
+[ ] Solid colour rendering
+[ ] Wireframe rendering
+[ ] Toon shader
+[ ] Text rendering
