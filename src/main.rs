@@ -13,7 +13,7 @@ use std::mem;
 use std::fs;
 use std::os::raw::c_void;
 
-use cgmath::{Matrix4, vec3, Deg, perspective, Point3, Vector3};
+use cgmath::{Matrix4, vec3, Deg, Rad, perspective, Point3, Vector3};
 use cgmath::prelude::*;
 
 // settings
@@ -21,20 +21,75 @@ const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
 
 // Structure definitions
+struct Window {
+    glfw_window: glfw::Window,
+}
+
+struct Camera {
+    pos_glob: Vector3<f32>,
+    att_glob: Vector3<f32>,
+    vel_glob: Vector3<f32>,
+    rot_glob: Vector3<f32>,
+    proj_mat: Matrix4<f32>,
+    view_mat: Matrix4<f32>,
+    total_mat: Matrix4<f32>,
+}
+
+impl Camera {
+    fn create(fov_deg: f32, render_size: (u32, u32), pos_glob: Vector3<f32>, att_glob: Vector3<f32>) -> Camera {
+        let mut cam = Camera {
+            pos_glob: pos_glob,
+            att_glob: att_glob,
+            vel_glob: Vector3::zero(),
+            rot_glob: Vector3::zero(),
+            proj_mat: Matrix4::identity(),
+            view_mat: Matrix4::identity(),
+            total_mat: Matrix4::identity()
+        };
+
+        cam.proj_mat = cam.proj_mat * perspective(Deg(fov_deg), render_size.0 as f32 / render_size.1 as f32, 0.1, 100.0);
+
+        cam.view_mat = cam.view_mat * Matrix4::<f32>::from_translation(pos_glob);
+        cam.view_mat = cam.view_mat * Matrix4::<f32>::from_angle_z(Rad(att_glob.z));
+        cam.view_mat = cam.view_mat * Matrix4::<f32>::from_angle_y(Rad(att_glob.y));
+        cam.view_mat = cam.view_mat * Matrix4::<f32>::from_angle_x(Rad(att_glob.x));
+
+        cam.total_mat = cam.proj_mat * cam.view_mat;
+
+        cam
+    }
+
+    fn process_input(&mut self, window: &mut glfw::Window) {
+    }
+
+    fn update(&mut self, delta_time: f32) {
+        self.pos_glob += self.vel_glob * delta_time;
+        self.rot_glob += self.rot_glob * delta_time;
+
+        self.view_mat = Matrix4::identity();
+        self.view_mat = self.view_mat * Matrix4::<f32>::from_translation(self.pos_glob);
+        self.view_mat = self.view_mat * Matrix4::<f32>::from_angle_z(Rad(self.att_glob.z));
+        self.view_mat = self.view_mat * Matrix4::<f32>::from_angle_y(Rad(self.att_glob.y));
+        self.view_mat = self.view_mat * Matrix4::<f32>::from_angle_x(Rad(self.att_glob.x));
+
+        self.total_mat = self.proj_mat * self.view_mat;
+    }
+}
+
 struct Shader {
     shader_id: u32,
 }
 
 impl Shader {
     fn create(vertex_file: &str, fragment_file: &str) -> Shader {
-        unsafe {    
+        unsafe {
             // Vertex shader
             let vertex_shader_source = fs::read_to_string(vertex_file).expect("Could not read vertex file");
             let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
             let c_str_vert = CString::new(vertex_shader_source.as_bytes()).unwrap();
             gl::ShaderSource(vertex_shader, 1, &c_str_vert.as_ptr(), ptr::null());
             gl::CompileShader(vertex_shader);
-    
+
             let mut success = gl::FALSE as GLint;
             let mut info_log = Vec::with_capacity(512);
             info_log.set_len(512 - 1);
@@ -43,21 +98,21 @@ impl Shader {
                 gl::GetShaderInfoLog(vertex_shader, 512, ptr::null_mut(), info_log.as_mut_ptr() as *mut GLchar);
                 println!("ERROR: Vertex shader compilation failed\n{}", str::from_utf8(&info_log).unwrap());
             }
-    
+
             // Fragment shader
             let fragment_shader_source = fs::read_to_string(fragment_file).expect("Could not read fragment file");
             let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
             let c_str_frag = CString::new(fragment_shader_source.as_bytes()).unwrap();
             gl::ShaderSource(fragment_shader, 1, &c_str_frag.as_ptr(), ptr::null());
             gl::CompileShader(fragment_shader);
-    
+
             info_log.set_len(512 - 1);
             gl::GetShaderiv(fragment_shader, gl::COMPILE_STATUS, &mut success);
             if success != gl::TRUE as GLint {
                 gl::GetShaderInfoLog(fragment_shader, 512, ptr::null_mut(), info_log.as_mut_ptr() as *mut GLchar);
                 println!("ERROR: Fragment shader compilation failed\n{}", str::from_utf8(&info_log).unwrap());
             }
-    
+
             // Link shaders
             let shader = Shader {
                 shader_id: gl::CreateProgram(),
@@ -65,13 +120,13 @@ impl Shader {
             gl::AttachShader(shader.shader_id, vertex_shader);
             gl::AttachShader(shader.shader_id, fragment_shader);
             gl::LinkProgram(shader.shader_id);
-    
+
             gl::GetProgramiv(shader.shader_id, gl::LINK_STATUS, &mut success);
             if success != gl::TRUE as GLint {
                 gl::GetProgramInfoLog(shader.shader_id, 512, ptr::null_mut(), info_log.as_mut_ptr() as *mut GLchar);
                 println!("ERROR: Shader program linking failed\n{}", str::from_utf8(&info_log).unwrap());
             }
-    
+
             gl::DeleteShader(vertex_shader);
             gl::DeleteShader(fragment_shader);
 
@@ -195,7 +250,9 @@ fn main() {
 
         vao
     };
-    let mut camera_pos = Point3::new(2.0, 0.0, 2.0);
+
+    let mut camera = Camera::create(60.0, (SCREEN_WIDTH, SCREEN_HEIGHT), Vector3::new(3.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 0.0));
+
     let mut last_frame = 0.0;
     let mut delta_time;
 
@@ -217,7 +274,8 @@ fn main() {
 
         // input
         // -----
-        process_input(&mut window, delta_time, &mut camera_pos, &mut is_wf, &mut is_space_down);
+        process_input(&mut window, delta_time, &mut is_wf, &mut is_space_down);
+        camera.process_input(&mut window);
 
         // render
         // ------
@@ -226,14 +284,11 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
             // Calculate transform
-            let mut transform: Matrix4<f32> = Matrix4::identity();
-            transform = transform * perspective(Deg(60.0), SCREEN_WIDTH as f32 / SCREEN_HEIGHT as f32, 0.1, 100.0);
-            transform = transform * Matrix4::look_at(camera_pos, camera_pos + Vector3::new(-1.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0));
 
             // Pass stuff to the shader
             shader_program.bind();
             shader_program.pass_colour("colour", (0.0, 0.5, 0.0, 1.0));
-            shader_program.pass_matrix("transMat", &transform);
+            shader_program.pass_matrix("transMat", &camera.total_mat);
 
             gl::BindVertexArray(vao);
             if is_wf {
@@ -263,7 +318,7 @@ fn process_events(window: &mut glfw::Window, events: &Receiver<(f64, glfw::Windo
     }
 }
 
-fn process_input(window: &mut glfw::Window, delta_time: f32, camera_pos: &mut Point3<f32>, is_wf: &mut bool, is_space_down: &mut bool) {
+fn process_input(window: &mut glfw::Window, delta_time: f32, is_wf: &mut bool, is_space_down: &mut bool) {
     if window.get_key(Key::Escape) == Action::Press {
         window.set_should_close(true);
     }
@@ -274,20 +329,5 @@ fn process_input(window: &mut glfw::Window, delta_time: f32, camera_pos: &mut Po
     }
     if window.get_key(Key::Space) == Action::Release {
         *is_space_down = false;
-    }
-
-    let camera_speed = 2.5 * delta_time;
-
-    if window.get_key(Key::W) == Action::Press {
-        camera_pos.x -= camera_speed;
-    }
-    if window.get_key(Key::S) == Action::Press {
-        camera_pos.x += camera_speed;
-    }
-    if window.get_key(Key::A) == Action::Press {
-        camera_pos.y -= camera_speed;
-    }
-    if window.get_key(Key::D) == Action::Press {
-        camera_pos.y += camera_speed;
     }
 }
