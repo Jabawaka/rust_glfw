@@ -80,6 +80,46 @@ impl Camera {
             }
         }
 
+        // Reset views to predefined ones
+        if window.is_input_down(InputAction::ViewFrontX) {
+            self.pos_glob = Point3::new(3.0, 0.0, 0.0);
+            self.att_glob = Vector3::new(0.0, 0.0, std::f64::consts::PI as f32);
+        }
+        if window.is_input_down(InputAction::ViewRearX) {
+            self.pos_glob = Point3::new(-3.0, 0.0, 0.0);
+            self.att_glob = Vector3::zero();
+        }
+        if window.is_input_down(InputAction::ViewLeftY) {
+            self.pos_glob = Point3::new(0.0, 3.0, 0.0);
+            self.att_glob = Vector3::new(0.0, 0.0, -std::f64::consts::PI as f32 / 2.0);
+        }
+        if window.is_input_down(InputAction::ViewRightY) {
+            self.pos_glob = Point3::new(0.0, -3.0, 0.0);
+            self.att_glob = Vector3::new(0.0, 0.0, std::f64::consts::PI as f32 / 2.0);
+        }
+        if window.is_input_down(InputAction::ViewTopZ) {
+            self.pos_glob = Point3::new(0.0, 0.0, 3.0);
+            self.att_glob = Vector3::new(0.0, std::f64::consts::PI as f32 / 2.0 , 0.0);
+        }
+        if window.is_input_down(InputAction::ViewBotZ) {
+            self.pos_glob = Point3::new(0.0, 0.0, -3.0);
+            self.att_glob = Vector3::new(0.0, -std::f64::consts::PI as f32 / 2.0 , 0.0);
+        }
+
+        // Update rotation according to input
+        if window.is_input_down(InputAction::RotLeft) {
+            self.rot_glob.z += 1.0;
+        }
+        if window.is_input_down(InputAction::RotRight) {
+            self.rot_glob.z -= 1.0;
+        }
+        if window.is_input_down(InputAction::RotUp) {
+            self.rot_glob.y -= 1.0;
+        }
+        if window.is_input_down(InputAction::RotDown) {
+            self.rot_glob.y += 1.0;
+        }
+
         if window.is_input_down(InputAction::Rotate) {
             if window.last_mouse_disp.0 > 0.0 {
                 self.rot_glob.z += 1.0;
@@ -95,27 +135,6 @@ impl Camera {
             }
         }
 
-        if window.is_input_down(InputAction::ViewX) {
-            self.pos_glob = Point3::new(-3.0, 0.0, 0.0);
-            self.att_glob = Vector3::zero();
-        }
-        if window.is_input_down(InputAction::ViewY) {
-            self.pos_glob = Point3::new(0.0, -3.0, 0.0);
-            self.att_glob = Vector3::new(0.0, 0.0, std::f64::consts::PI as f32 / 2.0);
-        }
-        if window.is_input_down(InputAction::ViewZ) {
-            self.pos_glob = Point3::new(0.0, 0.0, 3.0);
-            self.att_glob = Vector3::new(0.0, std::f64::consts::PI as f32 / 2.0 , 0.0);
-        }
-
-        // Update rotation according to input
-        if window.is_input_down(InputAction::RotLeft) {
-            self.rot_glob.z += 1.0;
-        }
-        if window.is_input_down(InputAction::RotRight) {
-            self.rot_glob.z -= 1.0;
-        }
-
         // Normalise and apply magnitude
         if self.vel_loc.magnitude() > 0.0 {
             self.vel_loc = CAM_SPEED * self.vel_loc.normalize();
@@ -129,16 +148,16 @@ impl Camera {
         // Update angles
         self.att_glob += self.rot_glob * delta_time;
         if self.att_glob.y > std::f64::consts::PI as f32 / 2.0 {
-            self.att_glob.y = std::f64::consts::PI as f32 / 2.0;
+            self.att_glob.y = std::f64::consts::PI as f32 / 2.0 - 0.01;
         }
         if self.att_glob.y < -std::f64::consts::PI as f32 / 2.0 {
-            self.att_glob.y = -std::f64::consts::PI as f32 / 2.0;
+            self.att_glob.y = -std::f64::consts::PI as f32 / 2.0 + 0.01;
         }
         if self.att_glob.z > std::f64::consts::PI as f32 {
-            self.att_glob.z -= std::f64::consts::PI as f32;
+            self.att_glob.z -= 2.0 * std::f64::consts::PI as f32;
         }
         if self.att_glob.z < -std::f64::consts::PI as f32 {
-            self.att_glob.z += std::f64::consts::PI as f32;
+            self.att_glob.z += 2.0 * std::f64::consts::PI as f32;
         }
 
         let att_mat: Matrix4<f32> =

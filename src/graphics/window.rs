@@ -14,9 +14,14 @@ pub enum InputAction {
     Rotate,
     RotLeft,
     RotRight,
-    ViewX,
-    ViewY,
-    ViewZ
+    RotUp,
+    RotDown,
+    ViewFrontX,
+    ViewRearX,
+    ViewLeftY,
+    ViewRightY,
+    ViewTopZ,
+    ViewBotZ
 }
 
 struct Command {
@@ -108,32 +113,62 @@ impl Window {
             was_just_pressed: false
         });
         window.commands.push(Command {
-            key_id: Key::Q,
+            key_id: Key::Left,
             action: InputAction::RotLeft,
             is_down: false,
             was_just_pressed: false
         });
         window.commands.push(Command {
-            key_id: Key::E,
+            key_id: Key::Right,
             action: InputAction::RotRight,
             is_down: false,
             was_just_pressed: false
         });
         window.commands.push(Command {
+            key_id: Key::Up,
+            action: InputAction::RotUp,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Down,
+            action: InputAction::RotDown,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
             key_id: Key::Num1,
-            action: InputAction::ViewX,
+            action: InputAction::ViewFrontX,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num4,
+            action: InputAction::ViewRearX,
             is_down: false,
             was_just_pressed: false
         });
         window.commands.push(Command {
             key_id: Key::Num2,
-            action: InputAction::ViewY,
+            action: InputAction::ViewLeftY,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num5,
+            action: InputAction::ViewRightY,
             is_down: false,
             was_just_pressed: false
         });
         window.commands.push(Command {
             key_id: Key::Num3,
-            action: InputAction::ViewZ,
+            action: InputAction::ViewTopZ,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num6,
+            action: InputAction::ViewBotZ,
             is_down: false,
             was_just_pressed: false
         });
@@ -166,7 +201,7 @@ impl Window {
                     self.last_mouse_disp =
                        (self.last_mouse_pos.0 - x_pos,
                         self.last_mouse_pos.1 - y_pos);
-                    
+
                     if self.last_mouse_disp.0.abs() < 1.0 {
                         self.last_mouse_disp.0 = 0.0;
                     }
