@@ -31,6 +31,10 @@ fn main() {
     // -------------------------------------
     gl::load_with(|symbol| window.glfw_window.get_proc_address(symbol) as *const _);
 
+    unsafe {
+        gl::PointSize(5.0);
+    }
+
     let shader_program = Shader::create("shaders/simple.vs", "shaders/simple.fs");
 
     let vao = unsafe {
@@ -157,7 +161,8 @@ fn main() {
             // Render wireframe or solid color
             gl::BindVertexArray(vao);
             if is_wf {
-                gl::DrawElements(gl::LINES, 24, gl::UNSIGNED_INT, (36 * mem::size_of::<GLfloat>()) as *const c_void);
+                gl::DrawArrays(gl::POINTS, 0, 8);
+                //gl::DrawElements(gl::LINES, 24, gl::UNSIGNED_INT, (36 * mem::size_of::<GLfloat>()) as *const c_void);
             } else {
                 gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, ptr::null());
             }
