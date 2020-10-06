@@ -99,11 +99,11 @@ impl Camera {
         }
         if window.is_input_down(InputAction::ViewTopZ) {
             self.pos_glob = Point3::new(0.0, 0.0, 3.0);
-            self.att_glob = Vector3::new(0.0, std::f64::consts::PI as f32 / 2.0 , 0.0);
+            self.att_glob = Vector3::new(0.0, std::f64::consts::PI as f32 / 2.0 - 0.01 , 0.0);
         }
         if window.is_input_down(InputAction::ViewBotZ) {
             self.pos_glob = Point3::new(0.0, 0.0, -3.0);
-            self.att_glob = Vector3::new(0.0, -std::f64::consts::PI as f32 / 2.0 , 0.0);
+            self.att_glob = Vector3::new(0.0, -std::f64::consts::PI as f32 / 2.0 + 0.01, 0.0);
         }
 
         // Update rotation according to input
