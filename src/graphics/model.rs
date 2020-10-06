@@ -9,11 +9,11 @@ use std::mem;
 use std::os::raw::c_void;
 
 
-pub struct Model<'a> {
+pub struct Model {
     vao: u32,
     vertices: Vec<Vertex>,
-    lines: Vec<Line<'a>>,
-    faces: Vec<Face<'a>>,
+    lines: Vec<Line>,
+    faces: Vec<Face>,
     solid_index: usize,
     solid_length: i32,
     wireframe_index: usize,
@@ -33,20 +33,20 @@ struct Vertex {
     processed: bool
 }
 
-struct Line<'a> {
-    verts: (&'a mut Vertex, &'a mut Vertex)
+struct Line {
+    verts: (usize, usize)
 }
 
-struct Face<'a> {
-    verts: (&'a mut Vertex, &'a mut Vertex, &'a mut Vertex),
+struct Face {
+    verts: (usize, usize, usize),
     colour: Colour
 }
 
 
-impl<'a> Model<'a> {
-    pub fn create_default() -> Model<'a> {
+impl Model {
+    pub fn create_default() -> Model {
         // Crate the empty structure
-        let model = Model {
+        let mut model = Model {
             vao: 0,
             vertices: Vec::<Vertex>::new(),
             lines: Vec::<Line>::new(),
@@ -57,144 +57,143 @@ impl<'a> Model<'a> {
             wireframe_length: 0
         };
 
-        model
-    }
-
-    pub fn populate_default(&'a mut self) {
-        self.vertices.push(Vertex {
+        model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, 0.5, 0.5),
             pos_screen: Vector3::zero(),
             index: 0,
             processed: false
         });
-        self.vertices.push(Vertex {
+        model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, 0.5, -0.5),
             pos_screen: Vector3::zero(),
             index: 0,
             processed: false
         });
-        self.vertices.push(Vertex {
+        model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, -0.5, 0.5),
             pos_screen: Vector3::zero(),
             index: 0,
             processed: false
         });
-        self.vertices.push(Vertex {
+        model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, -0.5, -0.5),
             pos_screen: Vector3::zero(),
             index: 0,
             processed: false
         });
-        self.vertices.push(Vertex {
+        model.vertices.push(Vertex {
             pos_model: Vector3::new(-0.5, 0.5, 0.5),
             pos_screen: Vector3::zero(),
             index: 0,
             processed: false
         });
-        self.vertices.push(Vertex {
+        model.vertices.push(Vertex {
             pos_model: Vector3::new(-0.5, 0.5, -0.5),
             pos_screen: Vector3::zero(),
             index: 0,
             processed: false
         });
-        self.vertices.push(Vertex {
+        model.vertices.push(Vertex {
             pos_model: Vector3::new(-0.5, -0.5, 0.5),
             pos_screen: Vector3::zero(),
             index: 0,
             processed: false
         });
-        self.vertices.push(Vertex {
+        model.vertices.push(Vertex {
             pos_model: Vector3::new(-0.5, -0.5, -0.5),
             pos_screen: Vector3::zero(),
             index: 0,
             processed: false
         });
 
-        self.lines.push(Line {
-            verts: (&mut self.vertices[0], &mut self.vertices[1])
+        model.lines.push(Line { verts: (0, 1) });
+        model.lines.push(Line { verts: (0, 2) });
+        model.lines.push(Line { verts: (0, 4) });
+        model.lines.push(Line { verts: (1, 3) });
+        model.lines.push(Line { verts: (1, 5) });
+        model.lines.push(Line { verts: (2, 3) });
+        model.lines.push(Line { verts: (2, 7) });
+        model.lines.push(Line { verts: (3, 7) });
+        model.lines.push(Line { verts: (4, 5) });
+        model.lines.push(Line { verts: (4, 7) });
+        model.lines.push(Line { verts: (5, 6) });
+        model.lines.push(Line { verts: (6, 7) });
+
+        model.faces.push(Face {
+            verts: (0, 2, 3),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[0], &mut self.vertices[2])
+        model.faces.push(Face {
+            verts: (0,3, 1),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[0], &mut self.vertices[4])
+        model.faces.push(Face {
+            verts: (0, 1, 5),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[1], &mut self.vertices[3])
+        model.faces.push(Face {
+            verts: (0, 5, 4),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[1], &mut self.vertices[5])
+        model.faces.push(Face {
+            verts: (0, 4, 7),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[2], &mut self.vertices[3])
+        model.faces.push(Face {
+            verts: (0, 7, 2),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[2], &mut self.vertices[7])
+        model.faces.push(Face {
+            verts: (1, 3, 6),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[3], &mut self.vertices[6])
+        model.faces.push(Face {
+            verts: (1, 6, 5),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[4], &mut self.vertices[5])
+        model.faces.push(Face {
+            verts: (2, 6, 3),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[4], &mut self.vertices[7])
+        model.faces.push(Face {
+            verts: (2, 7, 6),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[5], &mut self.vertices[6])
+        model.faces.push(Face {
+            verts: (4, 5, 6),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        self.lines.push(Line {
-            verts: (&mut self.vertices[6], &mut self.vertices[7])
+        model.faces.push(Face {
+            verts: (4, 6, 7),
+            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
 
-        self.faces.push(Face {
-            verts: (&mut self.vertices[0], &mut self.vertices[2], &mut self.vertices[3]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[0], &mut self.vertices[3], &mut self.vertices[1]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[0], &mut self.vertices[1], &mut self.vertices[5]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[0], &mut self.vertices[5], &mut self.vertices[4]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[0], &mut self.vertices[4], &mut self.vertices[7]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[0], &mut self.vertices[7], &mut self.vertices[2]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[1], &mut self.vertices[3], &mut self.vertices[6]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[1], &mut self.vertices[6], &mut self.vertices[5]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[2], &mut self.vertices[6], &mut self.vertices[3]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[2], &mut self.vertices[7], &mut self.vertices[6]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[4], &mut self.vertices[5], &mut self.vertices[6]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
-        self.faces.push(Face {
-            verts: (&mut self.vertices[4], &mut self.vertices[6], &mut self.vertices[7]),
-            colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
-        });
+        model.check();
+
+        model
+    }
+
+    fn check(&mut self) {
+        // Check faces first
+        for face in self.faces.iter_mut() {
+            if  face.verts.0 >= self.vertices.len() ||
+                face.verts.1 >= self.vertices.len() ||
+                face.verts.2 >= self.vertices.len()
+            {
+                println!("[WRN] Dropping face because vertex index is wrong");
+                //self.faces.remove(face);
+            }
+        }
+
+        // Check lines
+        for line in self.lines.iter_mut() {
+            if  line.verts.0 >= self.vertices.len() ||
+                line.verts.1 >= self.vertices.len()
+            {
+                println!("[WRN] Dropping line because vertex index is wrong");
+                //self.lines.remove(line);
+            }
+        }
     }
 
     fn update(&mut self) {
@@ -211,60 +210,65 @@ impl<'a> Model<'a> {
         self.solid_index = 0;
 
         for face in self.faces.iter_mut() {
-            if face.verts.0.processed == false {
-                vertices.push(face.verts.0.pos_model.x);
-                vertices.push(face.verts.0.pos_model.y);
-                vertices.push(face.verts.0.pos_model.z);
+            let mut curr_vert = &mut self.vertices[face.verts.0];
+            if curr_vert.processed == false {
+                vertices.push(curr_vert.pos_model.x);
+                vertices.push(curr_vert.pos_model.y);
+                vertices.push(curr_vert.pos_model.z);
 
-                face.verts.0.processed = true;
-                face.verts.0.index = vertices.len() as i32 - 1;
+                curr_vert.processed = true;
+                curr_vert.index = vertices.len() as i32 - 1;
             }
-            indices.push(face.verts.0.index);
+            indices.push(curr_vert.index);
 
-            if face.verts.1.processed == false {
-                vertices.push(face.verts.1.pos_model.x);
-                vertices.push(face.verts.1.pos_model.y);
-                vertices.push(face.verts.1.pos_model.z);
+            curr_vert = &mut self.vertices[face.verts.1];
+            if curr_vert.processed == false {
+                vertices.push(curr_vert.pos_model.x);
+                vertices.push(curr_vert.pos_model.y);
+                vertices.push(curr_vert.pos_model.z);
 
-                face.verts.1.processed = true;
-                face.verts.1.index = vertices.len() as i32 - 1;
+                curr_vert.processed = true;
+                curr_vert.index = vertices.len() as i32 - 1;
             }
-            indices.push(face.verts.1.index);
+            indices.push(curr_vert.index);
 
-            if face.verts.2.processed == false {
-                vertices.push(face.verts.2.pos_model.x);
-                vertices.push(face.verts.2.pos_model.y);
-                vertices.push(face.verts.2.pos_model.z);
+            curr_vert = &mut self.vertices[face.verts.2];
+            if curr_vert.processed == false {
+                vertices.push(curr_vert.pos_model.x);
+                vertices.push(curr_vert.pos_model.y);
+                vertices.push(curr_vert.pos_model.z);
 
-                face.verts.2.processed = true;
-                face.verts.2.index = vertices.len() as i32 - 1;
+                curr_vert.processed = true;
+                curr_vert.index = vertices.len() as i32 - 1;
             }
-            indices.push(face.verts.2.index);
+            indices.push(curr_vert.index);
         }
         self.solid_length = indices.len() as i32;
 
         // Process lines
         self.wireframe_index = self.solid_length as usize;
         for line in self.lines.iter_mut() {
-            if line.verts.0.processed == false {
-                vertices.push(line.verts.0.pos_model.x);
-                vertices.push(line.verts.0.pos_model.y);
-                vertices.push(line.verts.0.pos_model.z);
+            let mut curr_vert = &mut self.vertices[line.verts.0];
+            if curr_vert.processed == false {
+                vertices.push(curr_vert.pos_model.x);
+                vertices.push(curr_vert.pos_model.y);
+                vertices.push(curr_vert.pos_model.z);
 
-                line.verts.0.processed = true;
-                line.verts.0.index = vertices.len() as i32 - 1;
+                curr_vert.processed = true;
+                curr_vert.index = vertices.len() as i32 - 1;
             }
-            indices.push(line.verts.0.index);
+            indices.push(curr_vert.index);
 
-            if line.verts.1.processed == false {
-                vertices.push(line.verts.1.pos_model.x);
-                vertices.push(line.verts.1.pos_model.y);
-                vertices.push(line.verts.1.pos_model.z);
+            curr_vert = &mut self.vertices[line.verts.1];
+            if curr_vert.processed == false {
+                vertices.push(curr_vert.pos_model.x);
+                vertices.push(curr_vert.pos_model.y);
+                vertices.push(curr_vert.pos_model.z);
 
-                line.verts.1.processed = true;
-                line.verts.1.index = vertices.len() as i32 - 1;
+                curr_vert.processed = true;
+                curr_vert.index = vertices.len() as i32 - 1;
             }
-            indices.push(line.verts.0.index);
+            indices.push(curr_vert.index);
         }
 
         // ---- PASS DATA TO GPU ----
