@@ -11,6 +11,8 @@ use std::os::raw::c_void;
 
 pub struct Model {
     vao: u32,
+    vbo: u32,
+    ebo: u32,
     vertices: Vec<Vertex>,
     lines: Vec<Line>,
     faces: Vec<Face>,
@@ -48,6 +50,8 @@ impl Model {
         // Crate the empty structure
         let mut model = Model {
             vao: 0,
+            vbo: 0,
+            ebo: 0,
             vertices: Vec::<Vertex>::new(),
             lines: Vec::<Line>::new(),
             faces: Vec::<Face>::new(),
@@ -56,6 +60,12 @@ impl Model {
             wireframe_index: 0,
             wireframe_length: 0
         };
+
+        unsafe {
+            gl::GenVertexArrays(1, &mut model.vao);
+            gl::GenBuffers(1, &mut model.vbo);
+            gl::GenBuffers(1, &mut model.ebo);
+        }
 
         model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, 0.5, 0.5),
@@ -124,7 +134,7 @@ impl Model {
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
-            verts: (0,3, 1),
+            verts: (0, 3, 1),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
@@ -168,12 +178,13 @@ impl Model {
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
 
-        model.check();
+        model.clean();
+        model.update();
 
         model
     }
 
-    fn check(&mut self) {
+    fn clean(&mut self) {
         // Check faces first
         for face in self.faces.iter_mut() {
             if  face.verts.0 >= self.vertices.len() ||
@@ -217,7 +228,7 @@ impl Model {
                 vertices.push(curr_vert.pos_model.z);
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 - 1;
+                curr_vert.index = vertices.len() as i32 / 3 - 1;
             }
             indices.push(curr_vert.index);
 
@@ -228,7 +239,7 @@ impl Model {
                 vertices.push(curr_vert.pos_model.z);
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 - 1;
+                curr_vert.index = vertices.len() as i32 / 3 - 1;
             }
             indices.push(curr_vert.index);
 
@@ -239,7 +250,7 @@ impl Model {
                 vertices.push(curr_vert.pos_model.z);
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 - 1;
+                curr_vert.index = vertices.len() as i32 / 3 - 1;
             }
             indices.push(curr_vert.index);
         }
@@ -255,7 +266,7 @@ impl Model {
                 vertices.push(curr_vert.pos_model.z);
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 - 1;
+                curr_vert.index = vertices.len() as i32 / 3 - 1;
             }
             indices.push(curr_vert.index);
 
@@ -266,29 +277,57 @@ impl Model {
                 vertices.push(curr_vert.pos_model.z);
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 - 1;
+                curr_vert.index = vertices.len() as i32 / 3 - 1;
             }
             indices.push(curr_vert.index);
+        }
+        self.wireframe_length = indices.len() as i32 - self.solid_length;
+
+        println!("{}, {}, {}, {}", self.solid_index, self.solid_length, self.wireframe_index, self.wireframe_length);
+
+        let mut index = 0;
+        while index < vertices.len() {
+            print!("{}", vertices[index]);
+            if (index + 1) % 3 == 0 {
+                print!("\n");
+            } else {
+                print!(", ");
+            }
+            index += 1;
+        }
+
+        let mut index = 0;
+        while index < indices.len() {
+            print!("{}", indices[index]);
+            if index < self.solid_length as usize {
+                if (index + 1) % 3 == 0 {
+                    print!("\n");
+                } else {
+                    print!(", ");
+                }
+            } else {
+                if (index + 1) % 2 == 0 {
+                    print!("\n");
+                } else {
+                    print!(", ");
+                }
+            }
+
+            index += 1;
         }
 
         // ---- PASS DATA TO GPU ----
         unsafe {
-            let (mut vbo, mut ebo) = (0, 0);
-            gl::GenVertexArrays(1, &mut self.vao);
-            gl::GenBuffers(1, &mut vbo);
-            gl::GenBuffers(1, &mut ebo);
-
             gl::BindVertexArray(self.vao);
 
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-
+            gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BufferData
                (gl::ARRAY_BUFFER,
                (vertices.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
                 &vertices[0] as *const f32 as *const c_void,
                 gl::DYNAMIC_DRAW);
 
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
             gl::BufferData(gl::ELEMENT_ARRAY_BUFFER,
                (indices.len() * mem::size_of::<GLint>()) as GLsizeiptr,
                 &indices[0] as *const i32 as *const c_void,
