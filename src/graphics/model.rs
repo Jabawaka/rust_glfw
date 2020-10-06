@@ -122,11 +122,11 @@ impl Model {
         model.lines.push(Line { verts: (1, 3) });
         model.lines.push(Line { verts: (1, 5) });
         model.lines.push(Line { verts: (2, 3) });
-        model.lines.push(Line { verts: (2, 7) });
+        model.lines.push(Line { verts: (2, 6) });
         model.lines.push(Line { verts: (3, 7) });
         model.lines.push(Line { verts: (4, 5) });
-        model.lines.push(Line { verts: (4, 7) });
-        model.lines.push(Line { verts: (5, 6) });
+        model.lines.push(Line { verts: (4, 6) });
+        model.lines.push(Line { verts: (5, 7) });
         model.lines.push(Line { verts: (6, 7) });
 
         model.faces.push(Face {
@@ -146,35 +146,35 @@ impl Model {
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
-            verts: (0, 4, 7),
+            verts: (0, 4, 6),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
-            verts: (0, 7, 2),
+            verts: (0, 6, 2),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
-            verts: (1, 3, 6),
+            verts: (1, 3, 7),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
-            verts: (1, 6, 5),
+            verts: (1, 7, 5),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
-            verts: (2, 6, 3),
+            verts: (2, 7, 3),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
-            verts: (2, 7, 6),
+            verts: (2, 6, 7),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
-            verts: (4, 5, 6),
+            verts: (4, 5, 7),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
         model.faces.push(Face {
-            verts: (4, 6, 7),
+            verts: (4, 7, 6),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
 
@@ -282,39 +282,6 @@ impl Model {
             indices.push(curr_vert.index);
         }
         self.wireframe_length = indices.len() as i32 - self.solid_length;
-
-        println!("{}, {}, {}, {}", self.solid_index, self.solid_length, self.wireframe_index, self.wireframe_length);
-
-        let mut index = 0;
-        while index < vertices.len() {
-            print!("{}", vertices[index]);
-            if (index + 1) % 3 == 0 {
-                print!("\n");
-            } else {
-                print!(", ");
-            }
-            index += 1;
-        }
-
-        let mut index = 0;
-        while index < indices.len() {
-            print!("{}", indices[index]);
-            if index < self.solid_length as usize {
-                if (index + 1) % 3 == 0 {
-                    print!("\n");
-                } else {
-                    print!(", ");
-                }
-            } else {
-                if (index + 1) % 2 == 0 {
-                    print!("\n");
-                } else {
-                    print!(", ");
-                }
-            }
-
-            index += 1;
-        }
 
         // ---- PASS DATA TO GPU ----
         unsafe {
