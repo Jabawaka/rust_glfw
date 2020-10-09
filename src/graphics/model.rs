@@ -46,6 +46,9 @@ struct Face {
 
 
 impl Model {
+    // -------------------------------------------------------------------------
+    // CREATE DEFAULT CUBE
+    // -------------------------------------------------------------------------
     pub fn create_default() -> Model {
         // Crate the empty structure
         let mut model = Model {
@@ -61,12 +64,14 @@ impl Model {
             wireframe_length: 0
         };
 
+        // Create OpenGL variables
         unsafe {
             gl::GenVertexArrays(1, &mut model.vao);
             gl::GenBuffers(1, &mut model.vbo);
             gl::GenBuffers(1, &mut model.ebo);
         }
 
+        // Push vertices to the model
         model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, 0.5, 0.5),
             pos_screen: Vector3::zero(),
@@ -116,6 +121,7 @@ impl Model {
             processed: false
         });
 
+        // Define lines
         model.lines.push(Line { verts: (0, 1) });
         model.lines.push(Line { verts: (0, 2) });
         model.lines.push(Line { verts: (0, 4) });
@@ -129,6 +135,7 @@ impl Model {
         model.lines.push(Line { verts: (5, 7) });
         model.lines.push(Line { verts: (6, 7) });
 
+        // Define faces
         model.faces.push(Face {
             verts: (0, 2, 3),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
@@ -178,12 +185,18 @@ impl Model {
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
 
+        // Remove wrong faces and lines
         model.clean();
-        model.update();
+
+        // Pass stuff to GPU
+        model.update_gpu_data();
 
         model
     }
 
+    // -------------------------------------------------------------------------
+    // CLEAN UP FACES AND LINES
+    // -------------------------------------------------------------------------
     fn clean(&mut self) {
         // Check faces first
         for face in self.faces.iter_mut() {
@@ -207,7 +220,10 @@ impl Model {
         }
     }
 
-    fn update(&mut self) {
+    // -------------------------------------------------------------------------
+    // UPDATE DATA IN THE GPU
+    // -------------------------------------------------------------------------
+    fn update_gpu_data(&mut self) {
         // ---- GENERATE ARRAYS FOR GPU ----
         let mut vertices = Vec::<f32>::new();
         let mut indices = Vec::<i32>::new();
@@ -300,7 +316,8 @@ impl Model {
                 &indices[0] as *const i32 as *const c_void,
                 gl::DYNAMIC_DRAW);
 
-            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 3 * mem::size_of::<GLfloat>() as GLsizei, ptr::null());
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE,
+                3 * mem::size_of::<GLfloat>() as GLsizei, ptr::null());
             gl::EnableVertexAttribArray(0);
 
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
@@ -309,6 +326,9 @@ impl Model {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // RENDER SOLID FACES
+    // -------------------------------------------------------------------------
     pub fn render_solid(&self) {
         unsafe {
             gl::BindVertexArray(self.vao);
@@ -320,6 +340,9 @@ impl Model {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // RENDER VERTICES AND LINES
+    // -------------------------------------------------------------------------
     pub fn render_wf(&self) {
         unsafe {
             gl::BindVertexArray(self.vao);
@@ -330,5 +353,17 @@ impl Model {
                (self.wireframe_index * mem::size_of::<GLfloat>()) as *const c_void);
             gl::BindVertexArray(0);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // ADD VERTEX
+    // -------------------------------------------------------------------------
+    pub fn add_vert(&mut self, vertex_pos_model: Vector3<f32>) {
+        self.vertices.push(Vertex {
+            pos_model: vertex_pos_model,
+            pos_screen: Vector3::zero(),
+            index: 0,
+            processed: false
+        });
     }
 }

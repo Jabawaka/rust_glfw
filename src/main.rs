@@ -8,22 +8,24 @@ use cgmath::{Point3, Vector3};
 mod graphics;
 use graphics::*;
 
-// settings
+
+// ---- SETTINGS ----
 const SCREEN_WIDTH: u32 = 1600;
 const SCREEN_HEIGHT: u32 = 900;
 
 
 fn main() {
-    // GLFW initialisation
-    // -------------------
+    // -------------------------------------------------------------------------
+    // INITIALISATION
+    // -------------------------------------------------------------------------
+    // ---- GFLW INITIALISATION ----
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
-    // GLFW window creation
-    // --------------------
-    let mut window = Window::create(&mut glfw, (SCREEN_WIDTH, SCREEN_HEIGHT), "TronWarp");
+    // ---- WINDOW CREATION ----
+    let mut window = Window::create
+       (&mut glfw, (SCREEN_WIDTH, SCREEN_HEIGHT), "TronWarp");
 
-    // gl: load all OpenGL function pointers
-    // -------------------------------------
+    // ---- OPENGL INITIALISATION ----
     gl::load_with(|symbol| window.glfw_window.get_proc_address(symbol) as *const _);
 
     unsafe {
@@ -32,6 +34,7 @@ fn main() {
 
     let shader_program = Shader::create("shaders/simple.vs", "shaders/simple.fs");
 
+    // ---- OBJECT CREATION ----
     let model = Model::create_default();
 
     let mut camera = Camera::create
@@ -39,6 +42,7 @@ fn main() {
         Point3::new(-2.0, 0.0, 0.0),
         Vector3::new(0.0, 0.0, 0.0));
 
+    // ---- MISC VARIABLES ----
     let mut last_frame = 0.0;
     let mut delta_time;
 
@@ -46,14 +50,16 @@ fn main() {
 
     let mut quit_flag = false;
 
-    // ---- MAIN LOOP ----
+    // -------------------------------------------------------------------------
+    // MAIN LOOP
+    // -------------------------------------------------------------------------
     while quit_flag == false {
-        // ---- Timing variables ----
+        // ---- TIMING VARIABLES ----
         let curr_frame = glfw.get_time() as f32;
         delta_time = curr_frame - last_frame;
         last_frame = curr_frame;
 
-        // ---- Process input ----
+        // ---- PROCESS INPUT ----
         // Start by storing it all in the window
         window.process_input();
 
@@ -69,10 +75,10 @@ fn main() {
         // Process input for objects
         camera.process_input(&window);
 
-        // ---- Update ----
+        // ---- UPDATE ----
         camera.update(delta_time);
 
-        // ---- Render ----
+        // ---- RENDER ----
         unsafe {
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
@@ -90,8 +96,7 @@ fn main() {
             }
         }
 
-        // glfw: swap buffers and poll IO events
-        // -------------------------------------
+        // GLFW: swap buffers and poll IO events
         window.glfw_window.swap_buffers();
         glfw.poll_events();
     }
