@@ -10,8 +10,6 @@ pub enum InputAction {
     MoveBack,
     MoveLeft,
     MoveRight,
-    MoveAround,
-    Rotate,
     RotLeft,
     RotRight,
     RotUp,
@@ -38,7 +36,11 @@ pub enum InputAction {
     Num8,
     Num9,
     Comma,
-    Dot
+    Dot,
+    Minus,
+
+    EnterLine,
+    EnterFace
 }
 
 struct Command {
@@ -52,8 +54,7 @@ pub struct Window {
     pub glfw_window: glfw::Window,
     glfw_events: std::sync::mpsc::Receiver<(f64, glfw::WindowEvent)>,
     commands: Vec<Command>,
-    last_mouse_pos: (f32, f32),
-    pub last_mouse_disp: (f32, f32)
+    pub last_mouse_pos: (f32, f32)
 }
 
 impl Window {
@@ -70,14 +71,13 @@ impl Window {
         glfw_new_window.set_framebuffer_size_polling(true);
 
         glfw_new_window.set_cursor_pos(size.0 as f64 / 2.0, size.1 as f64 / 2.0);
-        glfw_new_window.set_cursor_mode(CursorMode::Hidden);
+        glfw_new_window.set_cursor_mode(CursorMode::Normal);
         glfw_new_window.set_cursor_pos_polling(true);
 
         let mut window = Window {
             glfw_window: glfw_new_window,
             glfw_events: glfw_new_events,
             last_mouse_pos: (0.0, 0.0),
-            last_mouse_disp: (0.0, 0.0),
             commands: Vec::<Command>::new()
         };
 
@@ -114,18 +114,6 @@ impl Window {
         window.commands.push(Command {
             key_id: Key::D,
             action: InputAction::MoveRight,
-            is_down: false,
-            was_just_pressed: false
-        });
-        window.commands.push(Command {
-            key_id: Key::LeftShift,
-            action: InputAction::MoveAround,
-            is_down: false,
-            was_just_pressed: false
-        });
-        window.commands.push(Command {
-            key_id: Key::LeftControl,
-            action: InputAction::Rotate,
             is_down: false,
             was_just_pressed: false
         });
@@ -281,6 +269,25 @@ impl Window {
             is_down: false,
             was_just_pressed: false
         });
+        window.commands.push(Command {
+            key_id: Key::Minus,
+            action: InputAction::Minus,
+            is_down: false,
+            was_just_pressed: false
+        });
+        
+        window.commands.push(Command {
+            key_id: Key::L,
+            action: InputAction::EnterLine,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::F,
+            action: InputAction::EnterFace,
+            is_down: false,
+            was_just_pressed: false
+        });
 
         window
     }
@@ -307,16 +314,6 @@ impl Window {
             match event {
                 glfw::WindowEvent::CursorPos(x_pos, y_pos) => {
                     let (x_pos, y_pos) = (x_pos as f32, y_pos as f32);
-                    self.last_mouse_disp =
-                       (self.last_mouse_pos.0 - x_pos,
-                        self.last_mouse_pos.1 - y_pos);
-
-                    if self.last_mouse_disp.0.abs() < 1.0 {
-                        self.last_mouse_disp.0 = 0.0;
-                    }
-                    if self.last_mouse_disp.1.abs() < 1.0 {
-                        self.last_mouse_disp.1 = 0.0;
-                    }
 
                     self.last_mouse_pos = (x_pos, y_pos);
                 }

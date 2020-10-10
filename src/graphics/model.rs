@@ -1,7 +1,7 @@
 extern crate gl;
 use self::gl::types::*;
 
-use cgmath::Vector3;
+use cgmath::{Vector2, Vector3, Matrix4};
 use cgmath::prelude::*;
 
 use std::ptr;
@@ -30,9 +30,10 @@ struct Colour {
 
 struct Vertex {
     pos_model: Vector3<f32>,
-    pos_screen: Vector3<f32>,
+    pos_screen: Vector2<f32>,
     index: i32,
-    processed: bool
+    processed: bool,
+    highlight: bool
 }
 
 struct Line {
@@ -74,51 +75,59 @@ impl Model {
         // Push vertices to the model
         model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, 0.5, 0.5),
-            pos_screen: Vector3::zero(),
+            pos_screen: Vector2::zero(),
             index: 0,
-            processed: false
+            processed: false,
+            highlight: true
         });
         model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, 0.5, -0.5),
-            pos_screen: Vector3::zero(),
+            pos_screen: Vector2::zero(),
             index: 0,
-            processed: false
+            processed: false,
+            highlight: false
         });
         model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, -0.5, 0.5),
-            pos_screen: Vector3::zero(),
+            pos_screen: Vector2::zero(),
             index: 0,
-            processed: false
+            processed: false,
+            highlight: false
         });
         model.vertices.push(Vertex {
             pos_model: Vector3::new(0.5, -0.5, -0.5),
-            pos_screen: Vector3::zero(),
+            pos_screen: Vector2::zero(),
             index: 0,
-            processed: false
+            processed: false,
+            highlight: false
         });
         model.vertices.push(Vertex {
             pos_model: Vector3::new(-0.5, 0.5, 0.5),
-            pos_screen: Vector3::zero(),
+            pos_screen: Vector2::zero(),
             index: 0,
-            processed: false
+            processed: false,
+            highlight: false
         });
         model.vertices.push(Vertex {
             pos_model: Vector3::new(-0.5, 0.5, -0.5),
-            pos_screen: Vector3::zero(),
+            pos_screen: Vector2::zero(),
             index: 0,
-            processed: false
+            processed: false,
+            highlight: false
         });
         model.vertices.push(Vertex {
             pos_model: Vector3::new(-0.5, -0.5, 0.5),
-            pos_screen: Vector3::zero(),
+            pos_screen: Vector2::zero(),
             index: 0,
-            processed: false
+            processed: false,
+            highlight: false
         });
         model.vertices.push(Vertex {
             pos_model: Vector3::new(-0.5, -0.5, -0.5),
-            pos_screen: Vector3::zero(),
+            pos_screen: Vector2::zero(),
             index: 0,
-            processed: false
+            processed: false,
+            highlight: false
         });
 
         // Define lines
@@ -242,9 +251,14 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+                if curr_vert.highlight {
+                    vertices.push(1.0);
+                } else {
+                    vertices.push(0.0);
+                }
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 3 - 1;
+                curr_vert.index = vertices.len() as i32 / 4 - 1;
             }
             indices.push(curr_vert.index);
 
@@ -253,9 +267,14 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+                if curr_vert.highlight {
+                    vertices.push(1.0);
+                } else {
+                    vertices.push(0.0);
+                }
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 3 - 1;
+                curr_vert.index = vertices.len() as i32 / 4 - 1;
             }
             indices.push(curr_vert.index);
 
@@ -264,9 +283,14 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+                if curr_vert.highlight {
+                    vertices.push(1.0);
+                } else {
+                    vertices.push(0.0);
+                }
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 3 - 1;
+                curr_vert.index = vertices.len() as i32 / 4 - 1;
             }
             indices.push(curr_vert.index);
         }
@@ -280,9 +304,14 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+                if curr_vert.highlight {
+                    vertices.push(1.0);
+                } else {
+                    vertices.push(0.0);
+                }
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 3 - 1;
+                curr_vert.index = vertices.len() as i32 / 4 - 1;
             }
             indices.push(curr_vert.index);
 
@@ -291,9 +320,14 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+                if curr_vert.highlight {
+                    vertices.push(1.0);
+                } else {
+                    vertices.push(0.0);
+                }
 
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 3 - 1;
+                curr_vert.index = vertices.len() as i32 / 4 - 1;
             }
             indices.push(curr_vert.index);
         }
@@ -305,8 +339,26 @@ impl Model {
                 vertices.push(vertex.pos_model.x);
                 vertices.push(vertex.pos_model.y);
                 vertices.push(vertex.pos_model.z);
+                if vertex.highlight {
+                    vertices.push(1.0);
+                } else {
+                    vertices.push(0.0);
+                }
             }
         }
+
+        /*let mut index = 0;
+        while index < vertices.len() {
+            print!("{}", vertices[index]);
+            if (index + 1) % 4 == 0 {
+                print!("\n");
+            }
+            else {
+                print!(", ");
+            }
+
+            index += 1;
+        }*/
 
         // ---- PASS DATA TO GPU ----
         unsafe {
@@ -326,13 +378,45 @@ impl Model {
                 gl::DYNAMIC_DRAW);
 
             gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE,
-                3 * mem::size_of::<GLfloat>() as GLsizei, ptr::null());
+                4 * mem::size_of::<GLfloat>() as GLsizei, ptr::null());
             gl::EnableVertexAttribArray(0);
+
+            gl::VertexAttribPointer(1, 1, gl::FLOAT, gl::FALSE,
+                4 * mem::size_of::<GLfloat>() as GLsizei,
+               (3 * mem::size_of::<GLfloat>()) as *const c_void);
+            gl::EnableVertexAttribArray(1);
 
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
 
             gl::BindVertexArray(0);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // PROCESS VERTICES TO SCREEN SPACE
+    // -------------------------------------------------------------------------
+    pub fn process_vertices
+       (&mut self,
+        proj_view_mat: &Matrix4<f32>,
+        size: (u32, u32),
+        cursor_pos_screen: (f32, f32)) {
+        for vertex in self.vertices.iter_mut() {
+            let pos_screen = proj_view_mat * vertex.pos_model.extend(1.0);
+            vertex.pos_screen = pos_screen.truncate().truncate() / pos_screen.w;
+            vertex.pos_screen.x =
+                (vertex.pos_screen.x + 1.0) * size.0 as f32 / 2.0;
+            vertex.pos_screen.y =
+                (1.0 - vertex.pos_screen.y) * size.1 as f32 / 2.0;
+
+            if  (vertex.pos_screen.x - cursor_pos_screen.0).abs() < 5.0 &&
+                (vertex.pos_screen.y - cursor_pos_screen.1).abs() < 5.0
+            {
+                vertex.highlight = true;
+            }
+            else { vertex.highlight = false; }
+        }
+
+        self.update_gpu_data();
     }
 
     // -------------------------------------------------------------------------
@@ -370,9 +454,10 @@ impl Model {
     pub fn add_vert(&mut self, vertex_pos_model: Vector3<f32>) {
         self.vertices.push(Vertex {
             pos_model: vertex_pos_model,
-            pos_screen: Vector3::zero(),
+            pos_screen: Vector2::zero(),
             index: 0,
-            processed: false
+            processed: false,
+            highlight: false
         });
         
         self.update_gpu_data();

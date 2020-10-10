@@ -65,20 +65,6 @@ impl Camera {
         if window.is_input_down(InputAction::MoveRight) {
             self.vel_loc.y -= 1.0;
         }
-        if window.is_input_down(InputAction::MoveAround) {
-            if window.last_mouse_disp.0 > 0.0 {
-                self.vel_loc.y += 1.0;
-            }
-            if window.last_mouse_disp.0 < 0.0 {
-                self.vel_loc.y -= 1.0;
-            }
-            if window.last_mouse_disp.1 > 0.0 {
-                self.vel_loc.z += 1.0;
-            }
-            if window.last_mouse_disp.1 < 0.0 {
-                self.vel_loc.z -= 1.0;
-            }
-        }
 
         // Reset views to predefined ones
         if window.is_input_down(InputAction::ViewFrontX) {
@@ -120,21 +106,6 @@ impl Camera {
             self.rot_glob.y += 1.0;
         }
 
-        if window.is_input_down(InputAction::Rotate) {
-            if window.last_mouse_disp.0 > 0.0 {
-                self.rot_glob.z += 1.0;
-            }
-            if window.last_mouse_disp.0 < 0.0 {
-                self.rot_glob.z -= 1.0;
-            }
-            if window.last_mouse_disp.1 > 0.0 {
-                self.rot_glob.y -= 1.0;
-            }
-            if window.last_mouse_disp.1 < 0.0 {
-                self.rot_glob.y += 1.0;
-            }
-        }
-
         // Normalise and apply magnitude
         if self.vel_loc.magnitude() > 0.0 {
             self.vel_loc = CAM_SPEED * self.vel_loc.normalize();
@@ -166,17 +137,15 @@ impl Camera {
           * Matrix4::<f32>::from_angle_x(Rad(self.att_glob.x));
 
         // Rotate velocity into global frame and update position
-        let vel_glob = att_mat * Vector4::new(self.vel_loc.x, self.vel_loc.y, self.vel_loc.z, 1.0);
-        self.pos_glob += Vector3::new(vel_glob.x, vel_glob.y, vel_glob.z) * delta_time;
+        let vel_glob = (att_mat * self.vel_loc.extend(0.0)).truncate();
+        self.pos_glob += vel_glob * delta_time;
 
         // Set view matrix to look ahead
         let look_dir = att_mat * Vector4::new(1.0, 0.0, 0.0, 0.0);
-        let cam_target = Point3::new
-           (self.pos_glob.x + look_dir.x,
-            self.pos_glob.y + look_dir.y,
-            self.pos_glob.z + look_dir.z);
+        let cam_target = self.pos_glob + look_dir.truncate();
 
-        self.view_mat = Matrix4::look_at(self.pos_glob, cam_target, vec3(0.0, 0.0, 1.0));
+        self.view_mat = Matrix4::look_at
+           (self.pos_glob, cam_target, vec3(0.0, 0.0, 1.0));
 
         self.total_mat = self.proj_mat * self.view_mat;
     }

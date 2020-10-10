@@ -18,6 +18,8 @@ const SCREEN_HEIGHT: u32 = 900;
 // ---- STUFF ----
 const INPUT_MODE_NOMINAL: i32 = 0;
 const INPUT_MODE_ENTER_VERTEX: i32 = 1;
+const INPUT_MODE_ENTER_LINE: i32 = 2;
+const INPUT_MODE_ENTER_FACE: i32 = 3;
 
 
 fn main() {
@@ -81,14 +83,20 @@ fn main() {
             is_wf = !is_wf;
         }
 
-        if  window.was_input_pressed(InputAction::EnterVertex) &&
-            input_mode == INPUT_MODE_NOMINAL {
-            input_mode = INPUT_MODE_ENTER_VERTEX;
+        if input_mode == INPUT_MODE_NOMINAL {
+            if window.was_input_pressed(InputAction::EnterVertex) {
+                input_mode = INPUT_MODE_ENTER_VERTEX;
+            }
+            if window.was_input_pressed(InputAction::EnterLine) {
+                input_mode = INPUT_MODE_ENTER_LINE;
+            }
+            if window.was_input_pressed(InputAction::EnterFace) {
+                input_mode = INPUT_MODE_ENTER_FACE;
+            }
         }
 
         // Process inputting a vertex
         if input_mode == INPUT_MODE_ENTER_VERTEX {
-            println!("Input string: {}", &input_string);
             if window.was_input_pressed(InputAction::Num0) {
                 input_string.push_str("0");
             }
@@ -125,6 +133,9 @@ fn main() {
             if window.was_input_pressed(InputAction::Comma) {
                 input_string.push_str(",");
             }
+            if window.was_input_pressed(InputAction::Minus) {
+                input_string.push_str("-");
+            }
             if window.was_input_pressed(InputAction::EndCommand) {
                 // Process input string
                 let str_coords: Vec<&str> = input_string.split(',').collect();
@@ -140,6 +151,7 @@ fn main() {
                 }
 
                 // Return to nominal
+                input_string = String::new();
                 input_mode = INPUT_MODE_NOMINAL;
             }
             if window.was_input_pressed(InputAction::AbortCommand) {
@@ -155,6 +167,9 @@ fn main() {
         // ---- UPDATE ----
         camera.update(delta_time);
 
+        // Process vertices of model
+        model.process_vertices(&camera.total_mat, (SCREEN_WIDTH, SCREEN_HEIGHT), window.last_mouse_pos);
+
         // ---- RENDER ----
         unsafe {
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
@@ -162,7 +177,6 @@ fn main() {
 
             // Pass stuff to the shader
             shader_program.bind();
-            shader_program.pass_colour("colour", (0.0, 0.5, 0.0, 1.0));
             shader_program.pass_matrix("transMat", &camera.total_mat);
 
             // Render wireframe or solid color
