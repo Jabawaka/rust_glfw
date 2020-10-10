@@ -299,6 +299,15 @@ impl Model {
         }
         self.wireframe_length = indices.len() as i32 - self.solid_length;
 
+        // Process remaining vertices
+        for vertex in self.vertices.iter() {
+            if vertex.processed == false {
+                vertices.push(vertex.pos_model.x);
+                vertices.push(vertex.pos_model.y);
+                vertices.push(vertex.pos_model.z);
+            }
+        }
+
         // ---- PASS DATA TO GPU ----
         unsafe {
             gl::BindVertexArray(self.vao);
@@ -346,7 +355,7 @@ impl Model {
     pub fn render_wf(&self) {
         unsafe {
             gl::BindVertexArray(self.vao);
-            gl::DrawArrays(gl::POINTS, 0, 8);
+            gl::DrawArrays(gl::POINTS, 0, self.vertices.len() as i32);
             gl::DrawElements
                (gl::LINES,
                 self.wireframe_length, gl::UNSIGNED_INT,
@@ -365,5 +374,7 @@ impl Model {
             index: 0,
             processed: false
         });
+        
+        self.update_gpu_data();
     }
 }

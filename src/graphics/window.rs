@@ -21,7 +21,24 @@ pub enum InputAction {
     ViewLeftY,
     ViewRightY,
     ViewTopZ,
-    ViewBotZ
+    ViewBotZ,
+
+    EndCommand,
+    AbortCommand,
+
+    EnterVertex,
+    Num0,
+    Num1,
+    Num2,
+    Num3,
+    Num4,
+    Num5,
+    Num6,
+    Num7,
+    Num8,
+    Num9,
+    Comma,
+    Dot
 }
 
 struct Command {
@@ -137,38 +154,130 @@ impl Window {
             was_just_pressed: false
         });
         window.commands.push(Command {
-            key_id: Key::Num1,
+            key_id: Key::F1,
             action: InputAction::ViewFrontX,
             is_down: false,
             was_just_pressed: false
         });
         window.commands.push(Command {
-            key_id: Key::Num4,
+            key_id: Key::F4,
             action: InputAction::ViewRearX,
             is_down: false,
             was_just_pressed: false
         });
         window.commands.push(Command {
-            key_id: Key::Num2,
+            key_id: Key::F2,
             action: InputAction::ViewLeftY,
             is_down: false,
             was_just_pressed: false
         });
         window.commands.push(Command {
-            key_id: Key::Num5,
+            key_id: Key::F5,
             action: InputAction::ViewRightY,
             is_down: false,
             was_just_pressed: false
         });
         window.commands.push(Command {
-            key_id: Key::Num3,
+            key_id: Key::F3,
             action: InputAction::ViewTopZ,
             is_down: false,
             was_just_pressed: false
         });
         window.commands.push(Command {
-            key_id: Key::Num6,
+            key_id: Key::F6,
             action: InputAction::ViewBotZ,
+            is_down: false,
+            was_just_pressed: false
+        });
+
+        window.commands.push(Command {
+            key_id: Key::Enter,
+            action: InputAction::EndCommand,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Q,
+            action: InputAction::AbortCommand,
+            is_down: false,
+            was_just_pressed: false
+        });
+
+        window.commands.push(Command {
+            key_id: Key::V,
+            action: InputAction::EnterVertex,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num0,
+            action: InputAction::Num0,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num1,
+            action: InputAction::Num1,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num2,
+            action: InputAction::Num2,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num3,
+            action: InputAction::Num3,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num4,
+            action: InputAction::Num4,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num5,
+            action: InputAction::Num5,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num6,
+            action: InputAction::Num6,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num7,
+            action: InputAction::Num7,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num8,
+            action: InputAction::Num8,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Num9,
+            action: InputAction::Num9,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Period,
+            action: InputAction::Dot,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::Comma,
+            action: InputAction::Comma,
             is_down: false,
             was_just_pressed: false
         });
