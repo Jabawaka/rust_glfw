@@ -1,6 +1,8 @@
 extern crate glfw;
 use self::glfw::{Context, Key, Action, CursorMode};
 
+use cgmath::{Vector2};
+
 use std::mem;
 
 pub enum InputAction {
@@ -40,7 +42,9 @@ pub enum InputAction {
     Minus,
 
     EnterLine,
-    EnterFace
+    EnterFace,
+
+    Select
 }
 
 struct Command {
@@ -54,7 +58,7 @@ pub struct Window {
     pub glfw_window: glfw::Window,
     glfw_events: std::sync::mpsc::Receiver<(f64, glfw::WindowEvent)>,
     commands: Vec<Command>,
-    pub last_mouse_pos: (f32, f32)
+    pub last_mouse_pos: Vector2::<f32>
 }
 
 impl Window {
@@ -77,7 +81,7 @@ impl Window {
         let mut window = Window {
             glfw_window: glfw_new_window,
             glfw_events: glfw_new_events,
-            last_mouse_pos: (0.0, 0.0),
+            last_mouse_pos: Vector2::new(0.0, 0.0),
             commands: Vec::<Command>::new()
         };
 
@@ -88,7 +92,7 @@ impl Window {
             was_just_pressed: false
         });
         window.commands.push(Command {
-            key_id: Key::Space,
+            key_id: Key::Tab,
             action: InputAction::ToggleWF,
             is_down: false,
             was_just_pressed: false
@@ -289,6 +293,13 @@ impl Window {
             was_just_pressed: false
         });
 
+        window.commands.push(Command {
+            key_id: Key::Space,
+            action: InputAction::Select,
+            is_down: false,
+            was_just_pressed: false
+        });
+
         window
     }
 
@@ -315,7 +326,7 @@ impl Window {
                 glfw::WindowEvent::CursorPos(x_pos, y_pos) => {
                     let (x_pos, y_pos) = (x_pos as f32, y_pos as f32);
 
-                    self.last_mouse_pos = (x_pos, y_pos);
+                    self.last_mouse_pos = Vector2::new(x_pos, y_pos);
                 }
                 _ =>{}
             }

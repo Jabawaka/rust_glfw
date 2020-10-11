@@ -60,6 +60,7 @@ fn main() {
 
     let mut input_mode = INPUT_MODE_NOMINAL;
     let mut input_string = String::new();
+    let mut vert_indices = Vec::<usize>::new();
 
     // -------------------------------------------------------------------------
     // MAIN LOOP
@@ -146,6 +147,7 @@ fn main() {
                     float_coords.z = str_coords[2].parse::<f32>().unwrap();
 
                     model.add_vert(float_coords);
+                    model.update_gpu_data();
                 } else {
                     println!("You must enter three coords separated by commas");
                 }
@@ -161,6 +163,36 @@ fn main() {
             }
         }
 
+        if input_mode == INPUT_MODE_ENTER_LINE {
+            if window.was_input_pressed(InputAction::Select) {
+                match model.select_vert(window.last_mouse_pos) {
+                    Some(index) => vert_indices.push(index),
+                    None => ()
+                }
+            }
+            
+            if vert_indices.len() == 2 {
+                model.add_line(&vert_indices);
+                vert_indices = Vec::<usize>::new();
+                input_mode = INPUT_MODE_NOMINAL;
+            }
+        }
+
+        if input_mode == INPUT_MODE_ENTER_FACE {
+            if window.was_input_pressed(InputAction::Select) {
+                match model.select_vert(window.last_mouse_pos) {
+                    Some(index) => vert_indices.push(index),
+                    None => ()
+                }
+            }
+
+            if vert_indices.len() == 3 {
+                model.add_face(&vert_indices);
+                vert_indices = Vec::<usize>::new();
+                input_mode = INPUT_MODE_NOMINAL;
+            }
+        }
+
         // Process input for objects
         camera.process_input(&window);
 
@@ -168,7 +200,10 @@ fn main() {
         camera.update(delta_time);
 
         // Process vertices of model
-        model.process_vertices(&camera.total_mat, (SCREEN_WIDTH, SCREEN_HEIGHT), window.last_mouse_pos);
+        model.process_vertices
+           (&camera.total_mat,
+            (SCREEN_WIDTH, SCREEN_HEIGHT),
+            window.last_mouse_pos);
 
         // ---- RENDER ----
         unsafe {
