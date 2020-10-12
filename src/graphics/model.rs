@@ -161,23 +161,23 @@ impl Model {
     // -------------------------------------------------------------------------
     fn clean(&mut self) {
         // Check faces first
-        for face in self.faces.iter_mut() {
+        for (index, face) in self.faces.iter_mut().enumerate() {
             if  face.verts.0 >= self.vertices.len() ||
                 face.verts.1 >= self.vertices.len() ||
                 face.verts.2 >= self.vertices.len()
             {
                 println!("[WRN] Dropping face because vertex index is wrong");
-                //self.faces.remove(face);
+                //self.faces.remove(index);
             }
         }
 
         // Check lines
-        for line in self.lines.iter_mut() {
+        for (index, line) in self.lines.iter_mut().enumerate() {
             if  line.verts.0 >= self.vertices.len() ||
                 line.verts.1 >= self.vertices.len()
             {
                 println!("[WRN] Dropping line because vertex index is wrong");
-                //self.lines.remove(line);
+                //self.lines.remove(index);
             }
         }
     }
@@ -204,14 +204,21 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+
                 if curr_vert.highlight || curr_vert.selected {
                     vertices.push(1.0);
                 } else {
                     vertices.push(0.0);
                 }
 
+                vertices.push(0.0);
+                vertices.push(0.0);
+                vertices.push(1.0);
+
+                vertices.push(1.0);
+
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 4 - 1;
+                curr_vert.index = vertices.len() as i32 / 8 - 1;
             }
             indices.push(curr_vert.index);
 
@@ -220,14 +227,21 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+
                 if curr_vert.highlight || curr_vert.selected {
                     vertices.push(1.0);
                 } else {
                     vertices.push(0.0);
                 }
 
+                vertices.push(0.0);
+                vertices.push(0.0);
+                vertices.push(1.0);
+
+                vertices.push(1.0);
+
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 4 - 1;
+                curr_vert.index = vertices.len() as i32 / 8 - 1;
             }
             indices.push(curr_vert.index);
 
@@ -236,14 +250,21 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+
                 if curr_vert.highlight || curr_vert.selected {
                     vertices.push(1.0);
                 } else {
                     vertices.push(0.0);
                 }
 
+                vertices.push(0.0);
+                vertices.push(0.0);
+                vertices.push(1.0);
+
+                vertices.push(1.0);
+
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 4 - 1;
+                curr_vert.index = vertices.len() as i32 / 8 - 1;
             }
             indices.push(curr_vert.index);
         }
@@ -257,14 +278,21 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+
                 if curr_vert.highlight || curr_vert.selected {
                     vertices.push(1.0);
                 } else {
                     vertices.push(0.0);
                 }
 
+                vertices.push(0.0);
+                vertices.push(0.0);
+                vertices.push(0.0);
+
+                vertices.push(0.0);
+
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 4 - 1;
+                curr_vert.index = vertices.len() as i32 / 8 - 1;
             }
             indices.push(curr_vert.index);
 
@@ -273,14 +301,21 @@ impl Model {
                 vertices.push(curr_vert.pos_model.x);
                 vertices.push(curr_vert.pos_model.y);
                 vertices.push(curr_vert.pos_model.z);
+
                 if curr_vert.highlight || curr_vert.selected {
                     vertices.push(1.0);
                 } else {
                     vertices.push(0.0);
                 }
 
+                vertices.push(0.0);
+                vertices.push(0.0);
+                vertices.push(0.0);
+
+                vertices.push(0.0);
+
                 curr_vert.processed = true;
-                curr_vert.index = vertices.len() as i32 / 4 - 1;
+                curr_vert.index = vertices.len() as i32 / 8 - 1;
             }
             indices.push(curr_vert.index);
         }
@@ -292,18 +327,25 @@ impl Model {
                 vertices.push(vertex.pos_model.x);
                 vertices.push(vertex.pos_model.y);
                 vertices.push(vertex.pos_model.z);
+
                 if vertex.highlight || vertex.selected {
                     vertices.push(1.0);
                 } else {
                     vertices.push(0.0);
                 }
+
+                vertices.push(0.0);
+                vertices.push(0.0);
+                vertices.push(0.0);
+
+                vertices.push(0.0);
             }
         }
 
-        /*let mut index = 0;
+        let mut index = 0;
         while index < vertices.len() {
             print!("{}", vertices[index]);
-            if (index + 1) % 4 == 0 {
+            if (index + 1) % 8 == 0 {
                 print!("\n");
             }
             else {
@@ -311,7 +353,7 @@ impl Model {
             }
 
             index += 1;
-        }*/
+        }
 
         // ---- PASS DATA TO GPU ----
         unsafe {
@@ -331,13 +373,23 @@ impl Model {
                 gl::DYNAMIC_DRAW);
 
             gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE,
-                4 * mem::size_of::<GLfloat>() as GLsizei, ptr::null());
+                8 * mem::size_of::<GLfloat>() as GLsizei, ptr::null());
             gl::EnableVertexAttribArray(0);
 
             gl::VertexAttribPointer(1, 1, gl::FLOAT, gl::FALSE,
-                4 * mem::size_of::<GLfloat>() as GLsizei,
+                8 * mem::size_of::<GLfloat>() as GLsizei,
                (3 * mem::size_of::<GLfloat>()) as *const c_void);
             gl::EnableVertexAttribArray(1);
+
+            gl::VertexAttribPointer(2, 3, gl::FLOAT, gl::FALSE,
+                8 * mem::size_of::<GLfloat>() as GLsizei,
+               (4 * mem::size_of::<GLfloat>()) as *const c_void);
+            gl::EnableVertexAttribArray(2);
+
+            gl::VertexAttribIPointer(3, 1, gl::INT,
+                8 * mem::size_of::<GLfloat>() as GLsizei,
+               (7 * mem::size_of::<GLfloat>()) as *const c_void);
+            gl::EnableVertexAttribArray(3);
 
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
 
@@ -420,7 +472,7 @@ impl Model {
     pub fn select_vert(&mut self, cursor_pos_screen: Vector2<f32>)
       -> Option<usize> {
         for (index, vertex) in self.vertices.iter_mut().enumerate() {
-            if (vertex.pos_screen - cursor_pos_screen).magnitude() < 5.0 
+            if (vertex.pos_screen - cursor_pos_screen).magnitude() < 5.0
              && vertex.selected == false {
                 vertex.selected = true;
                 return Some(index);
@@ -449,7 +501,7 @@ impl Model {
             verts: (vert_indices[0], vert_indices[1], vert_indices[2]),
             colour: Colour { red: 0.0, green: 0.0, blue: 0.0}
         });
-        
+
         self.vertices[vert_indices[0]].selected = false;
         self.vertices[vert_indices[1]].selected = false;
         self.vertices[vert_indices[2]].selected = false;

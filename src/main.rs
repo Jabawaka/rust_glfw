@@ -40,7 +40,8 @@ fn main() {
         gl::PointSize(10.0);
     }
 
-    let shader_program = Shader::create("shaders/simple.vs", "shaders/simple.fs");
+    let normal_shader = Shader::create("shaders/simple.vs", "shaders/simple.fs");
+    let wf_shader = Shader::create("shaders/wireframe.vs", "shaders/wireframe.fs");
 
     // ---- OBJECT CREATION ----
     let mut model = Model::create_default();
@@ -170,7 +171,12 @@ fn main() {
                     None => ()
                 }
             }
-            
+            if window.was_input_pressed(InputAction::AbortCommand) {
+                // Return to nominal emptying string
+                vert_indices = Vec::<usize>::new();
+                input_mode = INPUT_MODE_NOMINAL;
+            }
+
             if vert_indices.len() == 2 {
                 model.add_line(&vert_indices);
                 vert_indices = Vec::<usize>::new();
@@ -184,6 +190,11 @@ fn main() {
                     Some(index) => vert_indices.push(index),
                     None => ()
                 }
+            }
+            if window.was_input_pressed(InputAction::AbortCommand) {
+                // Return to nominal emptying string
+                vert_indices = Vec::<usize>::new();
+                input_mode = INPUT_MODE_NOMINAL;
             }
 
             if vert_indices.len() == 3 {
@@ -210,14 +221,14 @@ fn main() {
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
-            // Pass stuff to the shader
-            shader_program.bind();
-            shader_program.pass_matrix("transMat", &camera.total_mat);
-
             // Render wireframe or solid color
             if is_wf {
+                wf_shader.bind();
+                wf_shader.pass_matrix("transMat", &camera.total_mat);
                 model.render_wf();
             } else {
+                normal_shader.bind();
+                normal_shader.pass_matrix("transMat", &camera.total_mat);
                 model.render_solid();
             }
         }
