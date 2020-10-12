@@ -386,7 +386,7 @@ impl Model {
                (4 * mem::size_of::<GLfloat>()) as *const c_void);
             gl::EnableVertexAttribArray(2);
 
-            gl::VertexAttribIPointer(3, 1, gl::INT,
+            gl::VertexAttribPointer(3, 1, gl::FLOAT, gl::FALSE,
                 8 * mem::size_of::<GLfloat>() as GLsizei,
                (7 * mem::size_of::<GLfloat>()) as *const c_void);
             gl::EnableVertexAttribArray(3);

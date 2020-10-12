@@ -2,6 +2,8 @@
 
 layout (location = 0) in vec3 vert_pos;
 layout (location = 1) in float highlightFactor;
+layout (location = 2) in vec3 normal;
+layout (location = 3) in float palette_index;
 
 out vec4 colour;
 
