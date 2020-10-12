@@ -1,9 +1,6 @@
-# Tutorials
-[X] Basic triangle rendering
-[X] Passing uniforms
-[ ] Transformations
-[ ] Camera struct
-[ ] Solid colour rendering
-[ ] Wireframe rendering
-[ ] Toon shader
-[ ] Text rendering
+# Rust ToDo stuff
+[X] Add vertices
+[X] Add lines
+[X] Add faces, simple version
+[ ] Process faces with colour and normal
+[ ] Add letters using rusttype
