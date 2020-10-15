@@ -16,11 +16,15 @@ void main() {
 
     if(palette_index == 0.0)
     {
-        vert_colour = vec3(1.0, 0.5, 0.0);
+        vert_colour = vec3(0.3, 0.7, 0.3);
     }
     if(palette_index == 1.0)
     {
-        vert_colour = vec3(0.0, 0.5, 1.0);
+        vert_colour = vec3(0.7, 0.3, 0.3);
+    }
+    if(palette_index == 2.0)
+    {
+        vert_colour = vec3(0.3, 0.3, 0.7);
     }
 
     colour = vec4(vert_colour, 1.0);

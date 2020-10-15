@@ -198,7 +198,7 @@ fn main() {
             }
 
             if vert_indices.len() == 3 {
-                model.add_face(&vert_indices);
+                model.add_face(&vert_indices, 0.0);
                 vert_indices = Vec::<usize>::new();
                 input_mode = INPUT_MODE_NOMINAL;
             }
