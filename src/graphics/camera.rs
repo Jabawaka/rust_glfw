@@ -1,6 +1,11 @@
 extern crate glfw;
 
-use std;
+extern crate gl;
+use gl::types::*;
+
+use std::ptr;
+use std::mem;
+use std::os::raw::c_void;
 
 use cgmath::{Matrix4, vec3, Deg, Rad, perspective, Point3, Vector3, Vector4};
 use cgmath::prelude::*;
@@ -12,6 +17,10 @@ pub struct Camera {
     att_glob: Vector3<f32>,
     vel_loc: Vector3<f32>,
     rot_glob: Vector3<f32>,
+    size: (u32, u32),
+    vao: u32,
+    framebuffer: u32,
+    texture_color_buffer: u32,
     proj_mat: Matrix4<f32>,
     view_mat: Matrix4<f32>,
     pub total_mat: Matrix4<f32>,
@@ -22,16 +31,22 @@ const CAM_ROTATION: f32 = 0.7;
 
 impl Camera {
     pub fn create(fov_deg: f32, render_size: (u32, u32), pos_glob: Point3<f32>, att_glob: Vector3<f32>) -> Camera {
+        // Create empty object
         let mut cam = Camera {
             pos_glob: pos_glob,
             att_glob: att_glob,
             vel_loc: Vector3::zero(),
             rot_glob: Vector3::zero(),
+            size: render_size,
+            vao: 0,
+            framebuffer: 0,
+            texture_color_buffer: 0,
             proj_mat: Matrix4::identity(),
             view_mat: Matrix4::identity(),
             total_mat: Matrix4::identity()
         };
 
+        // Calculate projection and view matrices
         cam.proj_mat = cam.proj_mat * perspective(Deg(fov_deg), render_size.0 as f32 / render_size.1 as f32, 0.1, 100.0);
 
         let att_mat: Matrix4<f32> =
@@ -44,6 +59,73 @@ impl Camera {
         cam.view_mat = Matrix4::look_at(pos_glob, cam_target, vec3(0.0, 0.0, 1.0));
 
         cam.total_mat = cam.proj_mat * cam.view_mat;
+
+        // Generate VAO for the screen quad
+        unsafe {
+            let mut vbo = 0;
+
+            let vertices: [f32; 24] = [
+                -1.0,  1.0,  0.0, 1.0,
+                -1.0, -1.0,  0.0, 0.0,
+                 1.0, -1.0,  1.0, 0.0,
+    
+                -1.0,  1.0,  0.0, 1.0,
+                 1.0, -1.0,  1.0, 0.0,
+                 1.0,  1.0,  1.0, 1.0
+            ];
+
+            gl::GenVertexArrays(1, &mut cam.vao);
+            gl::GenBuffers(1, &mut vbo);
+
+            gl::BindVertexArray(cam.vao);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+            gl::BufferData
+               (gl::ARRAY_BUFFER,
+                (vertices.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
+                &vertices[0] as *const f32 as *const c_void,
+                gl::STATIC_DRAW);
+
+            gl::EnableVertexAttribArray(0);
+            let stride = 4 * mem::size_of::<GLfloat>() as GLsizei;
+            gl::VertexAttribPointer
+               (0, 4, gl::FLOAT, gl::FALSE,
+                stride, ptr::null());
+
+            // Generate framebuffer object
+            gl::GenFramebuffers(1, &mut cam.framebuffer);
+            gl::BindFramebuffer(gl::FRAMEBUFFER, cam.framebuffer);
+            
+            gl::GenTextures(1, &mut cam.texture_color_buffer);
+            gl::BindTexture(gl::TEXTURE_2D, cam.texture_color_buffer);
+            gl::TexImage2D
+               (gl::TEXTURE_2D, 0, gl::RGB as i32,
+                render_size.0 as i32, render_size.1 as i32, 0,
+                gl::RGB, gl::UNSIGNED_BYTE, ptr::null());
+            gl::TexParameteri
+               (gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
+            gl::TexParameteri
+               (gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
+            gl::BindTexture(gl::TEXTURE_2D, 0);
+
+            gl::FramebufferTexture2D
+               (gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0,
+                gl::TEXTURE_2D, cam.texture_color_buffer, 0);
+            
+            let mut rbo = 0;
+            gl::GenRenderbuffers(1, &mut rbo);
+            gl::BindRenderbuffer(gl::RENDERBUFFER, rbo);
+            gl::RenderbufferStorage
+               (gl::RENDERBUFFER, gl::DEPTH24_STENCIL8,
+                render_size.0 as i32, render_size.1 as i32);
+            gl::FramebufferRenderbuffer
+               (gl::FRAMEBUFFER, gl::DEPTH_STENCIL_ATTACHMENT,
+                gl::RENDERBUFFER, rbo);
+            if gl::CheckFramebufferStatus(gl::FRAMEBUFFER) !=
+               gl::FRAMEBUFFER_COMPLETE {
+                println!("[ERR] Framebuffer is not complete!");
+            }
+            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
+        }
 
         cam
     }
@@ -148,5 +230,28 @@ impl Camera {
            (self.pos_glob, cam_target, vec3(0.0, 0.0, 1.0));
 
         self.total_mat = self.proj_mat * self.view_mat;
+    }
+
+    pub fn activate(&self) {
+        unsafe {
+            gl::Viewport(0, 0, self.size.0 as i32, self.size.1 as i32);
+            gl::BindFramebuffer(gl::FRAMEBUFFER, self.framebuffer);
+
+            gl::ClearColor(0.1, 0.1, 0.1, 0.0);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+        }
+    }
+
+    pub fn render(&self) {
+        unsafe {
+            gl::BindVertexArray(self.vao);
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, self.texture_color_buffer);
+
+            gl::DrawArrays(gl::TRIANGLES, 0, 6);
+
+            gl::BindTexture(gl::TEXTURE_2D, 0);
+            gl::BindVertexArray(0);
+        }
     }
 }

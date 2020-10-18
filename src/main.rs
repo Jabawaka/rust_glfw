@@ -9,10 +9,15 @@ use cgmath::prelude::*;
 mod graphics;
 use graphics::*;
 
+use std::cmp;
+
 
 // ---- SETTINGS ----
 const SCREEN_WIDTH: u32 = 1600;
 const SCREEN_HEIGHT: u32 = 900;
+
+const CAM_WIDTH: u32 = 640;
+const CAM_HEIGHT: u32 = 360;
 
 
 // ---- STUFF ----
@@ -20,6 +25,8 @@ const INPUT_MODE_NOMINAL: i32 = 0;
 const INPUT_MODE_ENTER_VERTEX: i32 = 1;
 const INPUT_MODE_ENTER_LINE: i32 = 2;
 const INPUT_MODE_ENTER_FACE: i32 = 3;
+
+const MATH_PI: f32 = std::f32::consts::PI;
 
 
 fn main() {
@@ -33,21 +40,114 @@ fn main() {
     let mut window = Window::create
        (&mut glfw, (SCREEN_WIDTH, SCREEN_HEIGHT), "TronWarp");
 
+    let (scr_width, scr_height) = window.glfw_window.get_framebuffer_size();
+
     // ---- OPENGL INITIALISATION ----
     gl::load_with(|symbol| window.glfw_window.get_proc_address(symbol) as *const _);
 
     unsafe {
         gl::PointSize(10.0);
+
+        gl::Enable(gl::DEPTH_TEST);
+        gl::DepthFunc(gl::LESS);
+
+        gl::Enable(gl::CULL_FACE);
+        gl::FrontFace(gl::CCW);
+        gl::CullFace(gl::BACK);
+
+        gl::Enable(gl::MULTISAMPLE);
     }
 
     let normal_shader = Shader::create("shaders/simple.vs", "shaders/simple.fs");
     let wf_shader = Shader::create("shaders/wireframe.vs", "shaders/wireframe.fs");
+    let cam_shader = Shader::create("shaders/camera.vs", "shaders/camera.fs");
 
     // ---- OBJECT CREATION ----
-    let mut model = Model::create_default();
+    let mut model = Model::create_empty();
 
+    // Generate ellipsoid
+    let a1 = 1.5;
+    let a2 = 0.5;
+    let b = 1.0;
+    let c1 = 0.8;
+    let c2 = 0.3;
+
+    let n_theta = 10;
+    let n_lambda = 15;
+
+    for theta_index in 0..n_theta {
+        // Create point coords
+        let theta = -MATH_PI / 2.0 + 0.1 + (MATH_PI - 0.2) * theta_index as f32 / (n_theta as f32 - 1.0);
+
+        for lambda_index in 0..n_lambda {
+            let lambda = 0.0 + 2.0 * MATH_PI * lambda_index as f32 / (n_lambda as f32 - 1.0);
+
+            // Select appropriate variables for the semi axis
+            let mut a = a1;
+            if theta < 0.0 {
+                a = a2;
+            }
+
+            let mut c = c1;
+            if lambda > MATH_PI {
+                c = c2;
+            }
+
+            // Add the vertex to the model
+            model.add_vert(Vector3::new(a * theta.sin(),
+                                        b * theta.cos() * lambda.cos(),
+                                        c * theta.cos() * lambda.sin()));
+
+            // Add the line that joins to the previous one at the same theta
+            // slice
+            if lambda_index != 0 {
+                model.add_line
+                   (&vec![lambda_index - 1 + theta_index * n_lambda,
+                          lambda_index + theta_index * n_lambda]);
+            }
+
+            // Add the line that joins to the previous one at the same lambda
+            // slice
+            if theta_index != 0 {
+                model.add_line
+                   (&vec![lambda_index + (theta_index - 1) * n_lambda,
+                          lambda_index + theta_index * n_lambda]);
+            }
+
+            // Add the faces corresponding to that vertex
+            if lambda_index != 0 && theta_index != 0 {
+                model.add_face
+                   (&vec![lambda_index - 1 + theta_index * n_lambda,
+                          lambda_index - 1 + (theta_index - 1) * n_lambda,
+                          lambda_index + theta_index * n_lambda], 0.0);
+                model.add_face
+                   (&vec![lambda_index - 1 + (theta_index - 1) * n_lambda,
+                          lambda_index + (theta_index - 1) * n_lambda,
+                          lambda_index + theta_index * n_lambda], 0.0);
+            }
+        }
+    }
+
+    // Add last two vertices and lines joining them
+    model.add_vert(Vector3::new(a1, 0.0, 0.0));
+    model.add_vert(Vector3::new(-a2, 0.0, 0.0));
+
+    for lambda_index in 0..n_lambda {
+        model.add_line(&vec![lambda_index, n_lambda  * n_theta + 1]);
+        model.add_line(&vec![lambda_index + (n_theta - 1) * n_lambda, n_lambda * n_theta]);
+
+        if lambda_index != 0 {
+            model.add_face(&vec![lambda_index, lambda_index - 1, n_lambda * n_theta + 1], 0.0);
+            model.add_face(&vec![lambda_index - 1 + (n_theta - 1) * n_lambda, lambda_index + (n_theta - 1) * n_lambda, n_lambda * n_theta], 0.0);
+        }
+    }
+
+    model.clean();
+    model.update_gpu_data();
+
+    // ---- CAMERA CREATION ----
     let mut camera = Camera::create
-       (60.0, (SCREEN_WIDTH, SCREEN_HEIGHT),
+       (60.0, (CAM_WIDTH, CAM_HEIGHT),
         Point3::new(-2.0, 0.0, 0.0),
         Vector3::new(0.0, 0.0, 0.0));
 
@@ -217,10 +317,8 @@ fn main() {
             window.last_mouse_pos);
 
         // ---- RENDER ----
+        camera.activate();
         unsafe {
-            gl::ClearColor(0.1, 0.1, 0.1, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT);
-
             // Render wireframe or solid color
             if is_wf {
                 wf_shader.bind();
@@ -231,6 +329,16 @@ fn main() {
                 normal_shader.pass_matrix("transMat", &camera.total_mat);
                 model.render_solid();
             }
+
+            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
+            gl::Viewport(0, 0, scr_width, scr_height);
+            gl::ClearColor(0.6, 0.6, 0.6, 1.0);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+
+            cam_shader.bind();
+            cam_shader.pass_int("layer", 1);
+            cam_shader.pass_int("textureSampler", 0);
+            camera.render();
         }
 
         // GLFW: swap buffers and poll IO events

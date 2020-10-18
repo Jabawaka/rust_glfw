@@ -43,9 +43,10 @@ struct Face {
 }
 
 // ---- CONSTANTS FOR COLOURS ----
-const COLOUR_GREEN: f32 = 0.0;
+const COLOUR_GREY: f32 = 0.0;
 const COLOUR_RED: f32 = 1.0;
 const COLOUR_BLUE: f32 = 2.0;
+const COLOUR_GREEN: f32 = 3.0;
 
 // ---- GPU CONSTANTS ----
 const SIZE_VERTEX_F32: u32 = 8;
@@ -53,9 +54,36 @@ const SIZE_VERTEX_F32: u32 = 8;
 
 impl Model {
     // -------------------------------------------------------------------------
-    // CREATE DEFAULT CUBE
+    // CREATION METHODS
     // -------------------------------------------------------------------------
-    pub fn create_default() -> Model {
+    // ---- EMPTY MODEL ----
+    pub fn create_empty() -> Model {
+        let mut model = Model {
+            vao: 0,
+            vbo: 0,
+            ebo: 0,
+            vertices: Vec::<Vertex>::new(),
+            lines: Vec::<Line>::new(),
+            faces: Vec::<Face>::new(),
+            solid_index: 0,
+            solid_length: 0,
+            wireframe_index: 0,
+            wireframe_length: 0,
+            vert_length: 0
+        };
+
+        // Create OpenGL variables
+        unsafe {
+            gl::GenVertexArrays(1, &mut model.vao);
+            gl::GenBuffers(1, &mut model.vbo);
+            gl::GenBuffers(1, &mut model.ebo);
+        }
+
+        model
+    }
+
+    // ---- DEFAULT CUBE ----
+    pub fn create_cube() -> Model {
         // Crate the empty structure
         let mut model = Model {
             vao: 0,
@@ -105,51 +133,51 @@ impl Model {
         // Define faces
         model.faces.push(Face {
             verts: (0, 2, 3),
-            colour: COLOUR_BLUE
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (0, 3, 1),
-            colour: COLOUR_BLUE
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (0, 1, 5),
-            colour: COLOUR_BLUE
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (0, 5, 4),
-            colour: COLOUR_BLUE
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (0, 4, 6),
-            colour: COLOUR_RED
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (0, 6, 2),
-            colour: COLOUR_RED
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (1, 3, 7),
-            colour: COLOUR_RED
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (1, 7, 5),
-            colour: COLOUR_RED
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (2, 7, 3),
-            colour: COLOUR_GREEN
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (2, 6, 7),
-            colour: COLOUR_GREEN
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (4, 5, 7),
-            colour: COLOUR_GREEN
+            colour: COLOUR_GREY
         });
         model.faces.push(Face {
             verts: (4, 7, 6),
-            colour: COLOUR_GREEN
+            colour: COLOUR_GREY
         });
 
         // Remove wrong faces and lines
@@ -164,7 +192,7 @@ impl Model {
     // -------------------------------------------------------------------------
     // CLEAN UP FACES AND LINES
     // -------------------------------------------------------------------------
-    fn clean(&mut self) {
+    pub fn clean(&mut self) {
         // Check faces first
         let n_vert = self.vertices.len();
         self.faces.retain(|face| face.verts.0 < n_vert && 

@@ -86,4 +86,12 @@ impl Shader {
             gl::UniformMatrix4fv(matrix_location, 1, gl::FALSE, matrix.as_ptr());
         }
     }
+
+    pub fn pass_int(&self, int_name: &str, int_value: i32) {
+        unsafe {
+            let int_name = CString::new(int_name).unwrap();
+            let int_location = gl::GetUniformLocation(self.shader_id, int_name.as_ptr());
+            gl::Uniform1i(int_location, int_value);
+        }
+    }
 }

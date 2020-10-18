@@ -65,6 +65,7 @@ impl Window {
     pub fn create(glfw: &mut glfw::Glfw, size: (u32, u32), title: &str) -> Window {
         glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+        glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
         let (mut glfw_new_window, glfw_new_events) =
             glfw.create_window(size.0, size.1, title, glfw::WindowMode::Windowed).
             expect("Failed to create GLFW window");
