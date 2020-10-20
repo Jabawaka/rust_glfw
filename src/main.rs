@@ -14,8 +14,8 @@ use graphics::*;
 const SCREEN_WIDTH: u32 = 1600;
 const SCREEN_HEIGHT: u32 = 900;
 
-const CAM_WIDTH: u32 = 1600;
-const CAM_HEIGHT: u32 = 900;
+const CAM_WIDTH: u32 = 320;
+const CAM_HEIGHT: u32 = 180;
 
 
 // ---- STUFF ----
@@ -363,16 +363,18 @@ fn create_phat_ship(model: &mut Model) {
         }
     }
 
-    // ---- FIRST PUSHER OUTER SURFACE----
+    let mut index_offset = n_lambda * n_theta + 2;
+
+    // ---- LEFT PUSHER OUTER SURFACE----
     // Define guides
     let x_max = 2.0;
     let x_min = -0.5;
-    let y1_top = 2.0;
-    let y1_bot = 2.2;
-    let y2_top = 2.4;
-    let y2_bot = 2.8;
+    let y1_top = 1.6;
+    let y1_bot = 2.4;
+    let y2_top = 1.8;
+    let y2_bot = 3.0;
 
-    let z_top = 2.0;
+    let z_top = 1.5;
     let z_bot = -0.5;
 
     let a_top = (y2_top - y1_top) / ((x_min - x_max) * (x_min - x_max));
@@ -385,7 +387,7 @@ fn create_phat_ship(model: &mut Model) {
 
     // Number of points along x and y
     let n_x = 10;
-    let n_y = 5;
+    let n_z = 5;
 
     for x_index in 0..n_x {
         // Get position in X and top and bottom Y position
@@ -395,18 +397,366 @@ fn create_phat_ship(model: &mut Model) {
         let y_pos_bot = a_bot * x_pos * x_pos + b_bot * x_pos + c_bot;
 
         // Generate coefficients for YZ parabola
-        let a_yz = (z_bot - z_top) / ((y_pos_bot - y_pos_top) * (y_pos_bot - y_pos_top));
-        let b_yz = -2.0 * a_yz * y_pos_top;
-        let c_yz = z_top + a_yz * y_pos_top * y_pos_top;
+        let a_yz = (y_pos_bot - y_pos_top) / ((z_bot - z_top) * (z_bot - z_top));
+        let b_yz = -2.0 * a_yz * z_top;
+        let c_yz = y_pos_top + a_yz * z_top * z_top;
 
-        for y_index in 0..n_y {
-            let y_pos = y_pos_bot + (y_pos_top - y_pos_bot) * y_index as f32 / (n_y as f32 - 1.0);
-            let z_pos = a_yz * y_pos * y_pos + b_yz * y_pos + c_yz;
+        for z_index in 0..n_z {
+            let z_pos = z_bot + (z_top - z_bot) * z_index as f32 / (n_z as f32 - 1.0);
+            let y_pos = a_yz * z_pos * z_pos + b_yz * z_pos + c_yz;
 
             model.add_vert(Vector3::new(x_pos, y_pos, z_pos));
-            println!("Pos: {}, {}, {}", x_pos, y_pos, z_pos);
+
+            // Add the line that joins to the previous one at the same x
+            // slice
+            if z_index != 0 {
+                model.add_line
+                (&vec![z_index - 1 + x_index * n_z + index_offset,
+                        z_index + x_index * n_z + index_offset]);
+            }
+
+            // Add the line that joins to the previous one at the same z
+            // slice
+            if x_index != 0 {
+                model.add_line
+                (&vec![z_index + (x_index - 1) * n_z + index_offset,
+                        z_index + x_index * n_z + index_offset]);
+            }
+
+            // Add the faces corresponding to that vertex
+            if z_index != 0 && x_index != 0 {
+                model.add_face
+                (&vec![z_index - 1 + x_index * n_z + index_offset,
+                        z_index - 1 + (x_index - 1) * n_z + index_offset,
+                        z_index + x_index * n_z + index_offset], 0.0);
+                model.add_face
+                (&vec![z_index - 1 + (x_index - 1) * n_z + index_offset,
+                        z_index + (x_index - 1) * n_z + index_offset,
+                        z_index + x_index * n_z + index_offset], 0.0);
+            }
         }
     }
 
-    // ---- FIRST PUSHER INNER SURFACE----
+    index_offset = index_offset + n_x * n_z;
+
+    // ---- LEFT PUSHER INNER SURFACE----
+    println!("Inner surface");
+    // Define guides
+    let x_max = 2.0;
+    let x_min = -0.5;
+    let y1_top = 1.3;
+    let y1_bot = 2.1;
+    let y2_top = 1.3;
+    let y2_bot = 2.0;
+
+    let z_top = 1.5;
+    let z_bot = -0.5;
+
+    let a_top = (y2_top - y1_top) / ((x_min - x_max) * (x_min - x_max));
+    let b_top = -2.0 * a_top * x_max;
+    let c_top = y1_top + a_top * x_max * x_max;
+
+    let a_bot = (y2_bot - y1_bot) / ((x_min - x_max) * (x_min - x_max));
+    let b_bot = -2.0 * a_bot * x_max;
+    let c_bot = y1_bot + a_bot * x_max * x_max;
+
+    for x_index in 0..n_x {
+        // Get position in X and top and bottom Y position
+        let x_pos = x_min + (x_max - x_min) * x_index as f32 / (n_x as f32 - 1.0);
+
+        let y_pos_top = a_top * x_pos * x_pos + b_top * x_pos + c_top;
+        let y_pos_bot = a_bot * x_pos * x_pos + b_bot * x_pos + c_bot;
+
+        // Generate coefficients for YZ parabola
+        let a_yz = (y_pos_bot - y_pos_top) / ((z_bot - z_top) * (z_bot - z_top));
+        let b_yz = -2.0 * a_yz * z_top;
+        let c_yz = y_pos_top + a_yz * z_top * z_top;
+
+        for z_index in 0..n_z {
+            let z_pos = z_bot + (z_top - z_bot) * z_index as f32 / (n_z as f32 - 1.0);
+            let y_pos = a_yz * z_pos * z_pos + b_yz * z_pos + c_yz;
+
+            model.add_vert(Vector3::new(x_pos, y_pos, z_pos));
+
+            // Add the line that joins to the previous one at the same x
+            // slice
+            if z_index != 0 {
+                model.add_line
+                (&vec![z_index - 1 + x_index * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset]);
+            }
+
+            // Add the line that joins to the previous one at the same z
+            // slice
+            if x_index != 0 {
+                model.add_line
+                (&vec![z_index + (x_index - 1) * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset]);
+            }
+
+            // Add the faces corresponding to that vertex
+            if z_index != 0 && x_index != 0 {
+                model.add_face
+                (&vec![z_index - 1 + x_index * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset,
+                       z_index - 1 + (x_index - 1) * n_z + index_offset], 0.0);
+                model.add_face
+                (&vec![z_index - 1 + (x_index - 1) * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset,
+                       z_index + (x_index - 1) * n_z + index_offset], 0.0);
+            }
+        }
+    }
+
+    // ---- STITCH THEM TOGETHER ----
+    for x_index in 0..n_x {
+        for z_index in 0..n_z {
+            // Add lines
+            if x_index == 0 || x_index == n_x - 1 ||
+               z_index == 0 || z_index == n_z - 1 {
+                model.add_line(&vec![z_index + x_index * n_z + index_offset,
+                                     z_index + x_index * n_z + index_offset - n_x * n_z]);
+            }
+
+            // Add faces
+            if x_index == 0 {
+                if z_index != 0 {
+                    model.add_face(&vec![z_index + x_index * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index - 1 + x_index * n_z + index_offset], 0.0);
+                    model.add_face(&vec![z_index - 1 + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index - 1 + x_index * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z], 0.0);
+                }
+            }
+            if x_index == n_x - 1 {
+                if z_index != 0 {
+                    model.add_face(&vec![z_index + x_index * n_z + index_offset,
+                                         z_index - 1 + x_index * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z], 0.0);
+                    model.add_face(&vec![z_index - 1 + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index - 1 + x_index * n_z + index_offset], 0.0);
+                }
+            }
+            if z_index == 0 {
+                if x_index != 0 {
+                    model.add_face(&vec![z_index + x_index * n_z + index_offset,
+                                         z_index + (x_index - 1) * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z], 0.0);
+                    model.add_face(&vec![z_index + (x_index - 1) * n_z + index_offset - n_x * n_z,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index + (x_index - 1) * n_z + index_offset], 0.0);
+                }
+            }
+            if z_index == n_z - 1 {
+                if x_index != 0 {
+                    model.add_face(&vec![z_index + x_index * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index + (x_index - 1) * n_z + index_offset], 0.0);
+                    model.add_face(&vec![z_index + (x_index - 1) * n_z + index_offset - n_x * n_z,
+                                         z_index + (x_index - 1) * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z], 0.0);
+                }
+            }
+        }
+    }
+
+    index_offset = index_offset + n_x * n_z;
+
+    // ---- RIGHT PUSHER OUTER SURFACE----
+    // Define guides
+    let x_max = 2.0;
+    let x_min = -0.5;
+    let y1_top = 1.6;
+    let y1_bot = 2.4;
+    let y2_top = 1.8;
+    let y2_bot = 3.0;
+
+    let z_top = 1.5;
+    let z_bot = -0.5;
+
+    let a_top = (y2_top - y1_top) / ((x_min - x_max) * (x_min - x_max));
+    let b_top = -2.0 * a_top * x_max;
+    let c_top = y1_top + a_top * x_max * x_max;
+
+    let a_bot = (y2_bot - y1_bot) / ((x_min - x_max) * (x_min - x_max));
+    let b_bot = -2.0 * a_bot * x_max;
+    let c_bot = y1_bot + a_bot * x_max * x_max;
+
+    // Number of points along x and y
+    let n_x = 10;
+    let n_z = 5;
+
+    for x_index in 0..n_x {
+        // Get position in X and top and bottom Y position
+        let x_pos = x_min + (x_max - x_min) * x_index as f32 / (n_x as f32 - 1.0);
+
+        let y_pos_top = a_top * x_pos * x_pos + b_top * x_pos + c_top;
+        let y_pos_bot = a_bot * x_pos * x_pos + b_bot * x_pos + c_bot;
+
+        // Generate coefficients for YZ parabola
+        let a_yz = (y_pos_bot - y_pos_top) / ((z_bot - z_top) * (z_bot - z_top));
+        let b_yz = -2.0 * a_yz * z_top;
+        let c_yz = y_pos_top + a_yz * z_top * z_top;
+
+        for z_index in 0..n_z {
+            let z_pos = z_bot + (z_top - z_bot) * z_index as f32 / (n_z as f32 - 1.0);
+            let y_pos = a_yz * z_pos * z_pos + b_yz * z_pos + c_yz;
+
+            model.add_vert(Vector3::new(x_pos, -y_pos, z_pos));
+
+            // Add the line that joins to the previous one at the same x
+            // slice
+            if z_index != 0 {
+                model.add_line
+                (&vec![z_index - 1 + x_index * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset]);
+            }
+
+            // Add the line that joins to the previous one at the same z
+            // slice
+            if x_index != 0 {
+                model.add_line
+                (&vec![z_index + (x_index - 1) * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset]);
+            }
+
+            // Add the faces corresponding to that vertex
+            if z_index != 0 && x_index != 0 {
+                model.add_face
+                (&vec![z_index - 1 + x_index * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset,
+                       z_index - 1 + (x_index - 1) * n_z + index_offset], 0.0);
+                model.add_face
+                (&vec![z_index - 1 + (x_index - 1) * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset,
+                       z_index + (x_index - 1) * n_z + index_offset], 0.0);
+            }
+        }
+    }
+
+    index_offset = index_offset + n_x * n_z;
+
+    // ---- RIGHT PUSHER INNER SURFACE----
+    // Define guides
+    let x_max = 2.0;
+    let x_min = -0.5;
+    let y1_top = 1.3;
+    let y1_bot = 2.1;
+    let y2_top = 1.3;
+    let y2_bot = 2.0;
+
+    let z_top = 1.5;
+    let z_bot = -0.5;
+
+    let a_top = (y2_top - y1_top) / ((x_min - x_max) * (x_min - x_max));
+    let b_top = -2.0 * a_top * x_max;
+    let c_top = y1_top + a_top * x_max * x_max;
+
+    let a_bot = (y2_bot - y1_bot) / ((x_min - x_max) * (x_min - x_max));
+    let b_bot = -2.0 * a_bot * x_max;
+    let c_bot = y1_bot + a_bot * x_max * x_max;
+
+    for x_index in 0..n_x {
+        // Get position in X and top and bottom Y position
+        let x_pos = x_min + (x_max - x_min) * x_index as f32 / (n_x as f32 - 1.0);
+
+        let y_pos_top = a_top * x_pos * x_pos + b_top * x_pos + c_top;
+        let y_pos_bot = a_bot * x_pos * x_pos + b_bot * x_pos + c_bot;
+
+        // Generate coefficients for YZ parabola
+        let a_yz = (y_pos_bot - y_pos_top) / ((z_bot - z_top) * (z_bot - z_top));
+        let b_yz = -2.0 * a_yz * z_top;
+        let c_yz = y_pos_top + a_yz * z_top * z_top;
+
+        for z_index in 0..n_z {
+            let z_pos = z_bot + (z_top - z_bot) * z_index as f32 / (n_z as f32 - 1.0);
+            let y_pos = a_yz * z_pos * z_pos + b_yz * z_pos + c_yz;
+
+            model.add_vert(Vector3::new(x_pos, -y_pos, z_pos));
+
+            // Add the line that joins to the previous one at the same x
+            // slice
+            if z_index != 0 {
+                model.add_line
+                (&vec![z_index - 1 + x_index * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset]);
+            }
+
+            // Add the line that joins to the previous one at the same z
+            // slice
+            if x_index != 0 {
+                model.add_line
+                (&vec![z_index + (x_index - 1) * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset]);
+            }
+
+            // Add the faces corresponding to that vertex
+            if z_index != 0 && x_index != 0 {
+                model.add_face
+                (&vec![z_index - 1 + x_index * n_z + index_offset,
+                       z_index - 1 + (x_index - 1) * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset], 0.0);
+                model.add_face
+                (&vec![z_index - 1 + (x_index - 1) * n_z + index_offset,
+                       z_index + (x_index - 1) * n_z + index_offset,
+                       z_index + x_index * n_z + index_offset], 0.0);
+            }
+        }
+    }
+
+    // ---- STITCH THEM TOGETHER ----
+    for x_index in 0..n_x {
+        for z_index in 0..n_z {
+            // Add lines
+            if x_index == 0 || x_index == n_x - 1 ||
+               z_index == 0 || z_index == n_z - 1 {
+                model.add_line(&vec![z_index + x_index * n_z + index_offset,
+                                     z_index + x_index * n_z + index_offset - n_x * n_z]);
+            }
+
+            // Add faces
+            if x_index == 0 {
+                if z_index != 0 {
+                    model.add_face(&vec![z_index + x_index * n_z + index_offset,
+                                         z_index - 1 + x_index * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z], 0.0);
+                    model.add_face(&vec![z_index - 1 + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index - 1 + x_index * n_z + index_offset], 0.0);
+                }
+            }
+            if x_index == n_x - 1 {
+                if z_index != 0 {
+                    model.add_face(&vec![z_index + x_index * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index - 1 + x_index * n_z + index_offset], 0.0);
+                    model.add_face(&vec![z_index - 1 + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index - 1 + x_index * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z], 0.0);
+                }
+            }
+            if z_index == 0 {
+                if x_index != 0 {
+                    model.add_face(&vec![z_index + x_index * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index + (x_index - 1) * n_z + index_offset], 0.0);
+                    model.add_face(&vec![z_index + (x_index - 1) * n_z + index_offset - n_x * n_z,
+                                         z_index + (x_index - 1) * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z], 0.0);
+                }
+            }
+            if z_index == n_z - 1 {
+                if x_index != 0 {
+                    model.add_face(&vec![z_index + x_index * n_z + index_offset,
+                                         z_index + (x_index - 1) * n_z + index_offset,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z], 0.0);
+                    model.add_face(&vec![z_index + (x_index - 1) * n_z + index_offset - n_x * n_z,
+                                         z_index + x_index * n_z + index_offset - n_x * n_z,
+                                         z_index + (x_index - 1) * n_z + index_offset], 0.0);
+                }
+            }
+        }
+    }
 }
