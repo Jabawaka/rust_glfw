@@ -26,6 +26,7 @@ pub struct Model {
 struct Vertex {
     pos_model: Vector3<f32>,
     pos_screen: Vector2<f32>,
+    normal_model: Option<Vector3<f32>>,
     indices: Vec<u32>,
     colours: Vec<f32>,
     pushed: bool,
@@ -457,6 +458,20 @@ impl Model {
         self.vertices.push(Vertex {
             pos_model,
             pos_screen: Vector2::zero(),
+            normal_model: None,
+            indices: Vec::new(),
+            colours: Vec::new(),
+            pushed: false,
+            highlight: false,
+            selected: false
+        });
+    }
+
+    pub fn add_vert_with_normal(&mut self, pos_model: Vector3<f32>, normal_model: Vector3<f32>) {
+        self.vertices.push(Vertex {
+            pos_model,
+            pos_screen: Vector2::zero(),
+            normal_model: Some(normal_model.normalize()),
             indices: Vec::new(),
             colours: Vec::new(),
             pushed: false,
@@ -510,7 +525,7 @@ impl Model {
 
 fn process_vertex(curr_vert: &mut Vertex,
                   colour: f32,
-                  normal: Vector3::<f32>,
+                  face_normal: Vector3::<f32>,
                   vertices: &mut Vec<f32>,
                   indices: &mut Vec<i32>) {
     // ---- PROCESS THE FIRST VERTEX ----
@@ -519,18 +534,22 @@ fn process_vertex(curr_vert: &mut Vertex,
 
     // Check if the vertex is already there
     if curr_vert.pushed {
-        // Update normals of already pushed vertices
+        // Update normals of already pushed vertices that don't have one defined
         let mut updated_normal = Vector3::<f32>::zero();
-        for index in curr_vert.indices.iter() {
-            vertices[(index * SIZE_VERTEX_F32 + 4) as usize] += normal.x;
-            vertices[(index * SIZE_VERTEX_F32 + 5) as usize] += normal.y;
-            vertices[(index * SIZE_VERTEX_F32 + 6) as usize] += normal.z;
+        if curr_vert.normal_model == None {
+            for index in curr_vert.indices.iter() {
+                vertices[(index * SIZE_VERTEX_F32 + 4) as usize] += face_normal.x;
+                vertices[(index * SIZE_VERTEX_F32 + 5) as usize] += face_normal.y;
+                vertices[(index * SIZE_VERTEX_F32 + 6) as usize] += face_normal.z;
 
-            // Cache updated normal for later
-            updated_normal = Vector3::new
-                (vertices[(index * SIZE_VERTEX_F32 + 4) as usize],
-                vertices[(index * SIZE_VERTEX_F32 + 5) as usize],
-                vertices[(index * SIZE_VERTEX_F32 + 6) as usize]);
+                // Cache updated normal for later
+                updated_normal = Vector3::new
+                    (vertices[(index * SIZE_VERTEX_F32 + 4) as usize],
+                    vertices[(index * SIZE_VERTEX_F32 + 5) as usize],
+                    vertices[(index * SIZE_VERTEX_F32 + 6) as usize]);
+            }
+        } else {
+            updated_normal = curr_vert.normal_model.unwrap();
         }
 
         // Vertex was already pushed, but maybe with a different colour
@@ -583,9 +602,15 @@ fn process_vertex(curr_vert: &mut Vertex,
             vertices.push(0.0);
         }
 
-        vertices.push(normal.x);
-        vertices.push(normal.y);
-        vertices.push(normal.z);
+        if curr_vert.normal_model == None {
+            vertices.push(face_normal.x);
+            vertices.push(face_normal.y);
+            vertices.push(face_normal.z);
+        } else {
+            vertices.push(curr_vert.normal_model.unwrap().x);
+            vertices.push(curr_vert.normal_model.unwrap().y);
+            vertices.push(curr_vert.normal_model.unwrap().z);
+        }
 
         vertices.push(colour);
 

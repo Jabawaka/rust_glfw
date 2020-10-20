@@ -9,15 +9,13 @@ use cgmath::prelude::*;
 mod graphics;
 use graphics::*;
 
-use std::cmp;
-
 
 // ---- SETTINGS ----
 const SCREEN_WIDTH: u32 = 1600;
 const SCREEN_HEIGHT: u32 = 900;
 
-const CAM_WIDTH: u32 = 640;
-const CAM_HEIGHT: u32 = 360;
+const CAM_WIDTH: u32 = 1600;
+const CAM_HEIGHT: u32 = 900;
 
 
 // ---- STUFF ----
@@ -65,82 +63,9 @@ fn main() {
     // ---- OBJECT CREATION ----
     let mut model = Model::create_empty();
 
-    // Generate ellipsoid
-    let a1 = 1.5;
-    let a2 = 0.5;
-    let b = 1.0;
-    let c1 = 0.8;
-    let c2 = 0.3;
+    create_phat_ship(&mut model);
 
-    let n_theta = 10;
-    let n_lambda = 15;
-
-    for theta_index in 0..n_theta {
-        // Create point coords
-        let theta = -MATH_PI / 2.0 + 0.1 + (MATH_PI - 0.2) * theta_index as f32 / (n_theta as f32 - 1.0);
-
-        for lambda_index in 0..n_lambda {
-            let lambda = 0.0 + 2.0 * MATH_PI * lambda_index as f32 / (n_lambda as f32 - 1.0);
-
-            // Select appropriate variables for the semi axis
-            let mut a = a1;
-            if theta < 0.0 {
-                a = a2;
-            }
-
-            let mut c = c1;
-            if lambda > MATH_PI {
-                c = c2;
-            }
-
-            // Add the vertex to the model
-            model.add_vert(Vector3::new(a * theta.sin(),
-                                        b * theta.cos() * lambda.cos(),
-                                        c * theta.cos() * lambda.sin()));
-
-            // Add the line that joins to the previous one at the same theta
-            // slice
-            if lambda_index != 0 {
-                model.add_line
-                   (&vec![lambda_index - 1 + theta_index * n_lambda,
-                          lambda_index + theta_index * n_lambda]);
-            }
-
-            // Add the line that joins to the previous one at the same lambda
-            // slice
-            if theta_index != 0 {
-                model.add_line
-                   (&vec![lambda_index + (theta_index - 1) * n_lambda,
-                          lambda_index + theta_index * n_lambda]);
-            }
-
-            // Add the faces corresponding to that vertex
-            if lambda_index != 0 && theta_index != 0 {
-                model.add_face
-                   (&vec![lambda_index - 1 + theta_index * n_lambda,
-                          lambda_index - 1 + (theta_index - 1) * n_lambda,
-                          lambda_index + theta_index * n_lambda], 0.0);
-                model.add_face
-                   (&vec![lambda_index - 1 + (theta_index - 1) * n_lambda,
-                          lambda_index + (theta_index - 1) * n_lambda,
-                          lambda_index + theta_index * n_lambda], 0.0);
-            }
-        }
-    }
-
-    // Add last two vertices and lines joining them
-    model.add_vert(Vector3::new(a1, 0.0, 0.0));
-    model.add_vert(Vector3::new(-a2, 0.0, 0.0));
-
-    for lambda_index in 0..n_lambda {
-        model.add_line(&vec![lambda_index, n_lambda  * n_theta + 1]);
-        model.add_line(&vec![lambda_index + (n_theta - 1) * n_lambda, n_lambda * n_theta]);
-
-        if lambda_index != 0 {
-            model.add_face(&vec![lambda_index, lambda_index - 1, n_lambda * n_theta + 1], 0.0);
-            model.add_face(&vec![lambda_index - 1 + (n_theta - 1) * n_lambda, lambda_index + (n_theta - 1) * n_lambda, n_lambda * n_theta], 0.0);
-        }
-    }
+    
 
     model.clean();
     model.update_gpu_data();
@@ -345,4 +270,143 @@ fn main() {
         window.glfw_window.swap_buffers();
         glfw.poll_events();
     }
+}
+
+
+// -----------------------------------------------------------------------------
+// CODE FOR CREATING THE PHATSHIP
+// -----------------------------------------------------------------------------
+fn create_phat_ship(model: &mut Model) {
+    // ---- BODY ELLIPSOID ----
+    // Define semi axis
+    let a1 = 1.5;
+    let a2 = 0.5;
+    let b = 1.0;
+    let c1 = 0.8;
+    let c2 = 0.3;
+
+    // Number of points on each polar coordinate
+    let n_theta = 10;
+    let n_lambda = 15;
+
+    // Loop creating the points
+    for theta_index in 0..n_theta {
+        // Create point coords
+        let theta = -MATH_PI / 2.0 + 0.1 + (MATH_PI - 0.2) * theta_index as f32 / (n_theta as f32 - 1.0);
+
+        for lambda_index in 0..n_lambda {
+            let lambda = 0.0 + 2.0 * MATH_PI * lambda_index as f32 / (n_lambda as f32 - 1.0);
+
+            // Select appropriate variables for the semi axis
+            let mut a = a1;
+            if theta < 0.0 {
+                a = a2;
+            }
+
+            let mut c = c1;
+            if lambda > MATH_PI {
+                c = c2;
+            }
+
+            // Add the vertex to the model
+            let x_pos = a * theta.sin();
+            let y_pos = b * theta.cos() * lambda.cos();
+            let z_pos = c * theta.cos() * lambda.sin();
+            model.add_vert_with_normal(Vector3::new(x_pos, y_pos, z_pos),
+                                       Vector3::new(x_pos / (a * a),
+                                                    y_pos / (b * b),
+                                                    z_pos / (c * c)));
+
+            // Add the line that joins to the previous one at the same theta
+            // slice
+            if lambda_index != 0 {
+                model.add_line
+                (&vec![lambda_index - 1 + theta_index * n_lambda,
+                        lambda_index + theta_index * n_lambda]);
+            }
+
+            // Add the line that joins to the previous one at the same lambda
+            // slice
+            if theta_index != 0 {
+                model.add_line
+                (&vec![lambda_index + (theta_index - 1) * n_lambda,
+                        lambda_index + theta_index * n_lambda]);
+            }
+
+            // Add the faces corresponding to that vertex
+            if lambda_index != 0 && theta_index != 0 {
+                model.add_face
+                (&vec![lambda_index - 1 + theta_index * n_lambda,
+                        lambda_index - 1 + (theta_index - 1) * n_lambda,
+                        lambda_index + theta_index * n_lambda], 0.0);
+                model.add_face
+                (&vec![lambda_index - 1 + (theta_index - 1) * n_lambda,
+                        lambda_index + (theta_index - 1) * n_lambda,
+                        lambda_index + theta_index * n_lambda], 0.0);
+            }
+        }
+    }
+
+    // Add last two vertices and lines joining them
+    model.add_vert_with_normal(Vector3::new(a1, 0.0, 0.0),
+                               Vector3::new(1.0, 0.0, 0.0));
+    model.add_vert_with_normal(Vector3::new(-a2, 0.0, 0.0),
+                               Vector3::new(-1.0, 0.0, 0.0));
+
+    for lambda_index in 0..n_lambda {
+        model.add_line(&vec![lambda_index, n_lambda  * n_theta + 1]);
+        model.add_line(&vec![lambda_index + (n_theta - 1) * n_lambda, n_lambda * n_theta]);
+
+        if lambda_index != 0 {
+            model.add_face(&vec![lambda_index, lambda_index - 1, n_lambda * n_theta + 1], 0.0);
+            model.add_face(&vec![lambda_index - 1 + (n_theta - 1) * n_lambda, lambda_index + (n_theta - 1) * n_lambda, n_lambda * n_theta], 0.0);
+        }
+    }
+
+    // ---- FIRST PUSHER OUTER SURFACE----
+    // Define guides
+    let x_max = 2.0;
+    let x_min = -0.5;
+    let y1_top = 2.0;
+    let y1_bot = 2.2;
+    let y2_top = 2.4;
+    let y2_bot = 2.8;
+
+    let z_top = 2.0;
+    let z_bot = -0.5;
+
+    let a_top = (y2_top - y1_top) / ((x_min - x_max) * (x_min - x_max));
+    let b_top = -2.0 * a_top * x_max;
+    let c_top = y1_top + a_top * x_max * x_max;
+
+    let a_bot = (y2_bot - y1_bot) / ((x_min - x_max) * (x_min - x_max));
+    let b_bot = -2.0 * a_bot * x_max;
+    let c_bot = y1_bot + a_bot * x_max * x_max;
+
+    // Number of points along x and y
+    let n_x = 10;
+    let n_y = 5;
+
+    for x_index in 0..n_x {
+        // Get position in X and top and bottom Y position
+        let x_pos = x_min + (x_max - x_min) * x_index as f32 / (n_x as f32 - 1.0);
+
+        let y_pos_top = a_top * x_pos * x_pos + b_top * x_pos + c_top;
+        let y_pos_bot = a_bot * x_pos * x_pos + b_bot * x_pos + c_bot;
+
+        // Generate coefficients for YZ parabola
+        let a_yz = (z_bot - z_top) / ((y_pos_bot - y_pos_top) * (y_pos_bot - y_pos_top));
+        let b_yz = -2.0 * a_yz * y_pos_top;
+        let c_yz = z_top + a_yz * y_pos_top * y_pos_top;
+
+        for y_index in 0..n_y {
+            let y_pos = y_pos_bot + (y_pos_top - y_pos_bot) * y_index as f32 / (n_y as f32 - 1.0);
+            let z_pos = a_yz * y_pos * y_pos + b_yz * y_pos + c_yz;
+
+            model.add_vert(Vector3::new(x_pos, y_pos, z_pos));
+            println!("Pos: {}, {}, {}", x_pos, y_pos, z_pos);
+        }
+    }
+
+    // ---- FIRST PUSHER INNER SURFACE----
 }
