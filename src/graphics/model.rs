@@ -232,17 +232,17 @@ impl Model {
             let normal = vec1.cross(vec2).normalize();
 
             // Process each of the vertices
-            process_vertex(&mut self.vertices[face.verts.0],
+            process_vertex_flat(&self.vertices[face.verts.0],
                            face.colour,
                            normal,
                            &mut vertices,
                            &mut indices);
-            process_vertex(&mut self.vertices[face.verts.1],
+            process_vertex_flat(&self.vertices[face.verts.1],
                            face.colour,
                            normal,
                            &mut vertices,
                            &mut indices);
-            process_vertex(&mut self.vertices[face.verts.2],
+            process_vertex_flat(&self.vertices[face.verts.2],
                            face.colour,
                            normal,
                            &mut vertices,
@@ -520,6 +520,32 @@ impl Model {
         self.vertices[vert_indices[1]].selected = false;
         self.vertices[vert_indices[2]].selected = false;
     }
+}
+
+
+fn process_vertex_flat(curr_vert: &Vertex,
+                       colour: f32,
+                       normal: Vector3::<f32>,
+                       vertices: &mut Vec<f32>,
+                       indices: &mut Vec<i32>) {
+    // Push an entire vertex
+    vertices.push(curr_vert.pos_model.x);
+    vertices.push(curr_vert.pos_model.y);
+    vertices.push(curr_vert.pos_model.z);
+
+    if curr_vert.highlight || curr_vert.selected {
+        vertices.push(1.0);
+    } else {
+        vertices.push(0.0);
+    }
+
+    vertices.push(normal.x);
+    vertices.push(normal.y);
+    vertices.push(normal.z);
+
+    vertices.push(colour);
+
+    indices.push((vertices.len() as u32 / SIZE_VERTEX_F32 - 1) as i32);
 }
 
 
