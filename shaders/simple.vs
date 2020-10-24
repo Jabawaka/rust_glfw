@@ -17,21 +17,28 @@ void main() {
 
     vert_normal = normalize(normal);
 
-    if(palette_index == 0.0)
+    if(highlightFactor > 0.0)
     {
-        vert_colour = vec3(0.4, 0.4, 0.4);
+        vert_colour = vec3(0.7, 0.7, 0.0);
     }
-    if(palette_index == 1.0)
+    else
     {
-        vert_colour = vec3(0.7, 0.3, 0.3);
-    }
-    if(palette_index == 2.0)
-    {
-        vert_colour = vec3(0.3, 0.3, 0.7);
-    }
-    if(palette_index == 3.0)
-    {
-        vert_colour = vec3(0.3, 0.7, 0.3);
+        if(palette_index == 0.0)
+        {
+            vert_colour = vec3(0.4, 0.4, 0.4);
+        }
+        if(palette_index == 1.0)
+        {
+            vert_colour = vec3(0.7, 0.3, 0.3);
+        }
+        if(palette_index == 2.0)
+        {
+            vert_colour = vec3(0.3, 0.3, 0.7);
+        }
+        if(palette_index == 3.0)
+        {
+            vert_colour = vec3(0.3, 0.7, 0.3);
+        }
     }
 
     colour = vec4(vert_colour, 1.0);

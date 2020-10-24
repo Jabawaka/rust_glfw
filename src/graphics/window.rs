@@ -43,6 +43,7 @@ pub enum InputAction {
 
     EnterLine,
     EnterFace,
+    DeleteVertex,
 
     Select
 }
@@ -290,6 +291,12 @@ impl Window {
         window.commands.push(Command {
             key_id: Key::F,
             action: InputAction::EnterFace,
+            is_down: false,
+            was_just_pressed: false
+        });
+        window.commands.push(Command {
+            key_id: Key::X,
+            action: InputAction::DeleteVertex,
             is_down: false,
             was_just_pressed: false
         });

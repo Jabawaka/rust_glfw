@@ -412,11 +412,39 @@ impl Model {
             vertex.pos_screen.y =
                 (1.0 - vertex.pos_screen.y) * size.1 as f32 / 2.0;
 
-            if  (vertex.pos_screen - cursor_pos_screen).magnitude() < 5.0
+            if (vertex.pos_screen - cursor_pos_screen).magnitude() < 5.0
             {
                 vertex.highlight = true;
             }
             else { vertex.highlight = false; }
+        }
+
+        self.update_gpu_data();
+    }
+
+    // -------------------------------------------------------------------------
+    // PROCESS FACES TO SCREEN SPACE
+    // -------------------------------------------------------------------------
+    pub fn process_faces
+       (&mut self,
+        cursor_pos_screen: Vector2::<f32>) {
+        
+        for face in self.faces.iter_mut() {
+            let centroid_pos = (self.vertices[face.verts.0].pos_screen +
+                                self.vertices[face.verts.1].pos_screen +
+                                self.vertices[face.verts.2].pos_screen) / 3.0;
+            
+            if (centroid_pos - cursor_pos_screen).magnitude() < 50.0
+            {
+                self.vertices[face.verts.0].highlight = true;
+                self.vertices[face.verts.1].highlight = true;
+                self.vertices[face.verts.2].highlight = true;
+            }
+            else {
+                self.vertices[face.verts.0].highlight = false;
+                self.vertices[face.verts.1].highlight = false;
+                self.vertices[face.verts.2].highlight = false;
+            }
         }
 
         self.update_gpu_data();
@@ -493,6 +521,46 @@ impl Model {
             }
         }
         return None;
+    }
+
+    // -------------------------------------------------------------------------
+    // REMOVE VERTEX
+    // -------------------------------------------------------------------------
+    pub fn remove_vert(&mut self, vert_index: usize) {
+        // ---- REMOVE EVERYTHING TO DO WITH THE VERTEX ----
+        // Clean faces
+        self.faces.retain(|face| face.verts.0 != vert_index && 
+                                 face.verts.1 != vert_index &&
+                                 face.verts.2 != vert_index);
+
+        // Clean lines
+        self.lines.retain(|line| line.verts.0 != vert_index &&
+                                 line.verts.1 != vert_index);
+
+        // Remove vertex
+        self.vertices.remove(vert_index);
+
+        // ---- UPDATE FACES AND LINES ----
+        for face in self.faces.iter_mut() {
+            if face.verts.0 > vert_index {
+                face.verts.0 = face.verts.0 - 1;
+            }
+            if face.verts.1 > vert_index {
+                face.verts.1 = face.verts.1 - 1;
+            }
+            if face.verts.2 > vert_index {
+                face.verts.2 = face.verts.2 - 1;
+            }
+        }
+
+        for line in self.lines.iter_mut() {
+            if line.verts.0 > vert_index {
+                line.verts.0 = line.verts.0 - 1;
+            }
+            if line.verts.1 > vert_index {
+                line.verts.1 = line.verts.1 - 1;
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

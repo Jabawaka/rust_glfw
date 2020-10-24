@@ -14,8 +14,10 @@ use graphics::*;
 const SCREEN_WIDTH: u32 = 1600;
 const SCREEN_HEIGHT: u32 = 900;
 
-const CAM_WIDTH: u32 = 320;
-const CAM_HEIGHT: u32 = 180;
+// ---- CAMERA SIZE ----
+// This should be fixed to 480x270 so that with 4 players it's 1920x1080
+const CAM_WIDTH: u32 = 480;
+const CAM_HEIGHT: u32 = 270;
 
 
 // ---- STUFF ----
@@ -23,6 +25,7 @@ const INPUT_MODE_NOMINAL: i32 = 0;
 const INPUT_MODE_ENTER_VERTEX: i32 = 1;
 const INPUT_MODE_ENTER_LINE: i32 = 2;
 const INPUT_MODE_ENTER_FACE: i32 = 3;
+const INPUT_MODE_DELETE_VERTEX: i32 = 4;
 
 const MATH_PI: f32 = std::f32::consts::PI;
 
@@ -64,8 +67,6 @@ fn main() {
     let mut model = Model::create_empty();
 
     create_phat_ship(&mut model);
-
-    
 
     model.clean();
     model.update_gpu_data();
@@ -119,6 +120,9 @@ fn main() {
             }
             if window.was_input_pressed(InputAction::EnterFace) {
                 input_mode = INPUT_MODE_ENTER_FACE;
+            }
+            if window.was_input_pressed(InputAction::DeleteVertex) {
+                input_mode = INPUT_MODE_DELETE_VERTEX;
             }
         }
 
@@ -229,6 +233,20 @@ fn main() {
             }
         }
 
+        if input_mode == INPUT_MODE_DELETE_VERTEX {
+            println!("Removing vertex");
+            if window.was_input_pressed(InputAction::Select) {
+                match model.select_vert(window.last_mouse_pos) {
+                    Some(index) => {
+                        model.remove_vert(index);
+                        input_mode = INPUT_MODE_NOMINAL;
+                        println!("Vertex deleted");
+                    },
+                    None => ()
+                }
+            }
+        }
+
         // Process input for objects
         camera.process_input(&window);
 
@@ -240,6 +258,10 @@ fn main() {
            (&camera.total_mat,
             (SCREEN_WIDTH, SCREEN_HEIGHT),
             window.last_mouse_pos);
+
+        if !is_wf {
+            model.process_faces(window.last_mouse_pos);
+        }
 
         // ---- RENDER ----
         camera.activate();
@@ -386,8 +408,8 @@ fn create_phat_ship(model: &mut Model) {
     let c_bot = y1_bot + a_bot * x_max * x_max;
 
     // Number of points along x and y
-    let n_x = 10;
-    let n_z = 5;
+    let n_x = 5;
+    let n_z = 3;
 
     for x_index in 0..n_x {
         // Get position in X and top and bottom Y position
@@ -440,7 +462,6 @@ fn create_phat_ship(model: &mut Model) {
     index_offset = index_offset + n_x * n_z;
 
     // ---- LEFT PUSHER INNER SURFACE----
-    println!("Inner surface");
     // Define guides
     let x_max = 2.0;
     let x_min = -0.5;
@@ -585,8 +606,8 @@ fn create_phat_ship(model: &mut Model) {
     let c_bot = y1_bot + a_bot * x_max * x_max;
 
     // Number of points along x and y
-    let n_x = 10;
-    let n_z = 5;
+    let n_x = 5;
+    let n_z = 3;
 
     for x_index in 0..n_x {
         // Get position in X and top and bottom Y position
