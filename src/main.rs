@@ -66,7 +66,9 @@ fn main() {
     // ---- OBJECT CREATION ----
     let mut model = Model::create_empty();
 
-    create_phat_ship(&mut model);
+    //create_phat_ship(&mut model);
+    //model.write_to_file("models/phat_ship.mdl");
+    model.load_from_file("models/phat_ship.mdl");
 
     model.clean();
     model.update_gpu_data();

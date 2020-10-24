@@ -7,6 +7,8 @@ use cgmath::prelude::*;
 use std::ptr;
 use std::mem;
 use std::os::raw::c_void;
+use std::fs::File;
+use std::io::{Write, BufReader, BufRead};
 
 
 pub struct Model {
@@ -588,9 +590,102 @@ impl Model {
         self.vertices[vert_indices[1]].selected = false;
         self.vertices[vert_indices[2]].selected = false;
     }
+
+    // -------------------------------------------------------------------------
+    // WRITE TO FILE
+    // -------------------------------------------------------------------------
+    pub fn write_to_file(&self, path_to_file: &str) {
+        let mut file = File::create(path_to_file).unwrap();
+
+        for vertex in self.vertices.iter() {
+            write!(file, "{},{},{}\n", vertex.pos_model.x,
+                                         vertex.pos_model.y,
+                                         vertex.pos_model.z);
+        }
+
+        write!(file, "Lines\n");
+        for line in self.lines.iter() {
+            write!(file, "{},{}\n", line.verts.0, line.verts.1);
+        }
+
+        write!(file, "Faces\n");
+        for face in self.faces.iter() {
+            write!(file, "{},{},{},{}\n", face.verts.0,
+                                             face.verts.1,
+                                             face.verts.2,
+                                             face.colour);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // LOAD FROM FILE
+    // -------------------------------------------------------------------------
+    pub fn load_from_file(&mut self, path_to_file: &str) {
+        match File::open(path_to_file) {
+            Ok(file) => {
+                self.vertices = Vec::new();
+                self.lines = Vec::new();
+                self.faces = Vec::new();
+
+                let file = BufReader::new(file);
+
+                let mut mode = 0;
+
+                for line in file.lines() {
+                    let actual_line = line.unwrap();
+                    match mode {
+                        0 => {
+                            if actual_line == "Lines" {
+                                mode = 1;
+                            } else {
+                                let str_vec: Vec<&str> = actual_line.split(',').collect();
+                                let mut vert_coords = Vector3::<f32>::zero();
+                                vert_coords.x = str_vec[0].parse::<f32>().unwrap();
+                                vert_coords.y = str_vec[1].parse::<f32>().unwrap();
+                                vert_coords.z = str_vec[2].parse::<f32>().unwrap();
+
+                                self.add_vert(vert_coords);
+                            }
+                        },
+                        1 => if actual_line == "Faces" {
+                            mode = 2;
+                        } else {
+                            let str_vec: Vec<&str> = actual_line.split(',').collect();
+                            let mut line_ind: Vec<usize> = Vec::new();
+
+                            line_ind.push(str_vec[0].parse::<usize>().unwrap());
+                            line_ind.push(str_vec[1].parse::<usize>().unwrap());
+
+                            self.add_line(&line_ind);
+                        },
+                        2 => {
+                            let str_vec: Vec<&str> = actual_line.split(',').collect();
+                            let mut face_ind: Vec<usize> = Vec::new();
+
+                            face_ind.push(str_vec[0].parse::<usize>().unwrap());
+                            face_ind.push(str_vec[1].parse::<usize>().unwrap());
+                            face_ind.push(str_vec[2].parse::<usize>().unwrap());
+
+                            let colour = str_vec[3].parse::<f32>().unwrap();
+
+                            self.add_face(&face_ind, colour);
+                        },
+                        _ => ()
+                    }
+                }
+
+                self.clean();
+                self.update_gpu_data();
+            },
+            Err(_e) => { println!("Could not open {}", path_to_file);}
+        }
+    }
 }
 
 
+// -----------------------------------------------------------------------------
+// MISC FUNCTIONS
+// -----------------------------------------------------------------------------
 fn process_vertex_flat(curr_vert: &Vertex,
                        colour: f32,
                        normal: Vector3::<f32>,
