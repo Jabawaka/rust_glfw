@@ -600,20 +600,20 @@ impl Model {
         for vertex in self.vertices.iter() {
             write!(file, "{},{},{}\n", vertex.pos_model.x,
                                          vertex.pos_model.y,
-                                         vertex.pos_model.z);
+                                         vertex.pos_model.z).expect("Could not write to file");
         }
 
-        write!(file, "Lines\n");
+        write!(file, "Lines\n").expect("Could not write to file");
         for line in self.lines.iter() {
-            write!(file, "{},{}\n", line.verts.0, line.verts.1);
+            write!(file, "{},{}\n", line.verts.0, line.verts.1).expect("Could not write to file");
         }
 
-        write!(file, "Faces\n");
+        write!(file, "Faces\n").expect("Could not write to file");
         for face in self.faces.iter() {
             write!(file, "{},{},{},{}\n", face.verts.0,
                                              face.verts.1,
                                              face.verts.2,
-                                             face.colour);
+                                             face.colour).expect("Could not write to file");
         }
     }
 

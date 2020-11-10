@@ -66,9 +66,11 @@ fn main() {
     // ---- OBJECT CREATION ----
     let mut model = Model::create_empty();
 
-    //create_phat_ship(&mut model);
-    //model.write_to_file("models/phat_ship.mdl");
-    model.load_from_file("models/phat_ship.mdl");
+    create_phat_ship(&mut model);
+    model.write_to_file("models/phat_ship.mdl");
+
+    // Load last model
+    model.load_from_file("models/last_model.mdl");
 
     model.clean();
     model.update_gpu_data();
@@ -236,13 +238,11 @@ fn main() {
         }
 
         if input_mode == INPUT_MODE_DELETE_VERTEX {
-            println!("Removing vertex");
             if window.was_input_pressed(InputAction::Select) {
                 match model.select_vert(window.last_mouse_pos) {
                     Some(index) => {
                         model.remove_vert(index);
                         input_mode = INPUT_MODE_NOMINAL;
-                        println!("Vertex deleted");
                     },
                     None => ()
                 }
@@ -294,6 +294,8 @@ fn main() {
         window.glfw_window.swap_buffers();
         glfw.poll_events();
     }
+
+    model.write_to_file("models/last_model.mdl");
 }
 
 
@@ -411,7 +413,7 @@ fn create_phat_ship(model: &mut Model) {
 
     // Number of points along x and y
     let n_x = 5;
-    let n_z = 3;
+    let n_z = 5;
 
     for x_index in 0..n_x {
         // Get position in X and top and bottom Y position
@@ -609,7 +611,7 @@ fn create_phat_ship(model: &mut Model) {
 
     // Number of points along x and y
     let n_x = 5;
-    let n_z = 3;
+    let n_z = 5;
 
     for x_index in 0..n_x {
         // Get position in X and top and bottom Y position

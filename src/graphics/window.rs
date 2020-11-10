@@ -1,5 +1,5 @@
 extern crate glfw;
-use self::glfw::{Context, Key, Action, CursorMode};
+use self::glfw::*;
 
 use cgmath::{Vector2};
 
@@ -67,22 +67,31 @@ impl Window {
         glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
         glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
-        let (mut glfw_new_window, glfw_new_events) =
-            glfw.create_window(size.0, size.1, title, glfw::WindowMode::Windowed).
-            expect("Failed to create GLFW window");
 
-        glfw_new_window.make_current();
+        let (mut glfw_window, glfw_events) = glfw.create_window(size.0, size.1, title, glfw::WindowMode::Windowed).expect("Couldn't create window");
 
-        glfw_new_window.set_key_polling(true);
-        glfw_new_window.set_framebuffer_size_polling(true);
+        glfw.with_primary_monitor_mut(|_: &mut _, m: Option<&glfw::Monitor>| {
+            let monitor = m.unwrap();
+        
+            let mode: glfw::VidMode = monitor.get_video_mode().unwrap();
+        
+            println!("Monitor: {}x{} ({}Hz)", mode.width, mode.height, mode.refresh_rate);
+            
+            glfw_window.set_monitor(glfw::WindowMode::FullScreen(&monitor), 0, 0, mode.width, mode.height, Some(mode.refresh_rate));
+        });
 
-        glfw_new_window.set_cursor_pos(size.0 as f64 / 2.0, size.1 as f64 / 2.0);
-        glfw_new_window.set_cursor_mode(CursorMode::Normal);
-        glfw_new_window.set_cursor_pos_polling(true);
+        glfw_window.make_current();
+
+        glfw_window.set_key_polling(true);
+        glfw_window.set_framebuffer_size_polling(true);
+
+        glfw_window.set_cursor_pos(size.0 as f64 / 2.0, size.1 as f64 / 2.0);
+        glfw_window.set_cursor_mode(CursorMode::Normal);
+        glfw_window.set_cursor_pos_polling(true);
 
         let mut window = Window {
-            glfw_window: glfw_new_window,
-            glfw_events: glfw_new_events,
+            glfw_window,
+            glfw_events,
             last_mouse_pos: Vector2::new(0.0, 0.0),
             commands: Vec::<Command>::new()
         };
